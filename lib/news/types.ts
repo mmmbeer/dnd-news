@@ -4,7 +4,8 @@ export type StoryKind =
   | "brief"
   | "notice"
   | "advert"
-  | "obituary";
+  | "obituary"
+  | "comic";
 
 export type StoryWidth = "full" | "wide" | "standard";
 

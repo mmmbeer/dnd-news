@@ -43,6 +43,7 @@ function storySpan(story: NewsStory, columns: number) {
 }
 
 function StoryBody({ story, columns }: { story: NewsStory; columns: number }) {
+  if (!story.body.trim()) return null;
   const bodyColumns = story.kind === "lead" ? Math.min(columns, 3) : 1;
   return (
     <div className="newspaper-copy" style={{ columnCount: bodyColumns }}>
@@ -103,7 +104,7 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
               {story.kicker && <div className="story-kicker">{story.kicker}</div>}
               <h2>{story.title}</h2>
               {story.dek && <p className="story-dek">{story.dek}</p>}
-              <div className="story-byline">By {story.byline}</div>
+              {story.kind !== "comic" && <div className="story-byline">By {story.byline}</div>}
               {illustration && (
                 <figure
                   className={`story-art story-art-${illustration.kind}`}
@@ -113,6 +114,7 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
                   {illustration.kind === "cartoon" && <figcaption>Editorial cartoon</figcaption>}
                 </figure>
               )}
+              {story.kind === "comic" && story.byline && <div className="story-byline">By {story.byline}</div>}
               <StoryBody story={story} columns={settings.columns} />
               {story.kind === "lead" && <div className="continued-mark">Continued inside</div>}
             </article>

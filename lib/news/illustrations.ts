@@ -99,9 +99,7 @@ const publicDomainIllustrations: StoryIllustration[] = publicDomainCatalog.map((
 export const storyIllustrations = [...generatedIllustrations, ...publicDomainIllustrations];
 
 export const illustrationById = new Map(storyIllustrations.map((illustration) => [illustration.id, illustration]));
-const cartoonFriendlyCategories = new Set<Exclude<StoryCategory, "any">>([
-  "civic", "guilds", "crime", "trade", "society", "culture",
-]);
+export const cartoonIllustrations = storyIllustrations.filter((illustration) => illustration.kind === "cartoon");
 
 export function randomIllustration(
   category: Exclude<StoryCategory, "any">,
@@ -109,10 +107,13 @@ export function randomIllustration(
   requestedKind?: IllustrationKind,
 ) {
   const roll = rng();
-  const kind = requestedKind
-    ?? (cartoonFriendlyCategories.has(category) && roll < 0.16 ? "cartoon" : roll < 0.62 ? "historical" : "generated");
+  const kind = requestedKind ?? (roll < 0.62 ? "historical" : "generated");
   const kindMatches = storyIllustrations.filter((illustration) => illustration.kind === kind);
   const categoryMatches = kindMatches.filter((illustration) => illustration.categories.includes(category));
   const candidates = categoryMatches.length ? categoryMatches : kindMatches;
   return candidates[Math.floor(rng() * candidates.length)]?.id ?? storyIllustrations[0].id;
+}
+
+export function randomCartoon(rng: () => number = Math.random) {
+  return cartoonIllustrations[Math.floor(rng() * cartoonIllustrations.length)]?.id ?? cartoonIllustrations[0]?.id ?? storyIllustrations[0].id;
 }

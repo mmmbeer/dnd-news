@@ -63,3 +63,32 @@ test("maps the generated and public-domain art pools across the complete story l
 
   await Promise.all(storyIllustrations.map((illustration) => access(`${root}/public${illustration.src}`)));
 });
+
+test("generates public-domain cartoons as standalone one-column comics", async () => {
+  const { createInitialIssue, ensureComicColumn, generateComic, generateStories, generateStory } = await vite.ssrLoadModule("/lib/news/generator.ts");
+  const { illustrationById } = await vite.ssrLoadModule("/lib/news/illustrations.ts");
+
+  const generatedComics = Array.from({ length: 200 }, (_, index) => generateComic(`comic-${index}`, index));
+  const cartoonIds = new Set(generatedComics.map((comic) => comic.illustrationId));
+
+  assert.equal(cartoonIds.size, 13);
+  for (const comic of generatedComics) {
+    assert.equal(comic.kind, "comic");
+    assert.equal(comic.width, "standard");
+    assert.equal(comic.body, "");
+    assert.equal(illustrationById.get(comic.illustrationId)?.kind, "cartoon");
+  }
+
+  const initialIssue = createInitialIssue();
+  assert.equal(initialIssue.stories.filter((story) => story.kind === "comic").length, 1);
+
+  const storiesOnly = generateStories("legacy-issue", 5, { category: "any", tone: "straight", length: "standard" });
+  const migratedLineup = ensureComicColumn("legacy-issue", storiesOnly);
+  assert.equal(migratedLineup.length, storiesOnly.length + 1);
+  assert.equal(migratedLineup.filter((story) => story.kind === "comic").length, 1);
+
+  for (let index = 0; index < 200; index += 1) {
+    const story = generateStory(`story-${index}`, { category: "any", tone: "straight", length: "standard" }, index);
+    assert.notEqual(illustrationById.get(story.illustrationId)?.kind, "cartoon");
+  }
+});

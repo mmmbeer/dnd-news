@@ -7,6 +7,7 @@ import {
   Copy,
   GripVertical,
   Lock,
+  MessageSquareQuote,
   Plus,
   Sparkles,
   Trash2,
@@ -24,6 +25,7 @@ interface StoryRailProps {
   selectedId: string;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onAddComic: () => void;
   onGenerate: () => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
@@ -35,6 +37,7 @@ export function StoryRail({
   selectedId,
   onSelect,
   onAdd,
+  onAddComic,
   onGenerate,
   onDelete,
   onDuplicate,
@@ -47,13 +50,14 @@ export function StoryRail({
       <div className="panel-heading">
         <div>
           <span className="eyebrow">Issue lineup</span>
-          <h2>Stories <span>{stories.length}</span></h2>
+          <h2>Contents <span>{stories.length}</span></h2>
         </div>
       </div>
 
       <div className="story-actions">
-        <Button size="sm" onClick={onAdd}><Plus /> New story</Button>
-        <Button size="sm" variant="outline" onClick={onGenerate}><Sparkles /> Add filler</Button>
+        <Button size="sm" onClick={onAdd}><Plus /> Story</Button>
+        <Button size="sm" variant="outline" onClick={onGenerate}><Sparkles /> Filler</Button>
+        <Button size="sm" variant="outline" onClick={onAddComic}><MessageSquareQuote /> Comic</Button>
       </div>
 
       <div className="story-list">
@@ -73,7 +77,7 @@ export function StoryRail({
               <GripVertical className="drag-grip" aria-hidden="true" />
               <span className="story-list-copy">
                 <span className="story-list-kicker">
-                  {story.generated ? "Filler" : "DM story"} · {story.kind}
+                  {story.kind === "comic" ? "Editorial comic" : `${story.generated ? "Filler" : "DM story"} · ${story.kind}`}
                   {story.locked && <Lock className="inline-lock" aria-label="Locked" />}
                 </span>
                 <strong>{story.title}</strong>

@@ -1,4 +1,4 @@
-import { randomIllustration, type IllustrationKind } from "./illustrations";
+import { illustrationById, randomCartoon, randomIllustration, type IllustrationKind } from "./illustrations";
 import { getNewspaperPreset } from "./presets";
 import {
   chance,
@@ -56,6 +56,21 @@ function paragraphsFor(length: StoryLength, paragraphs: string[]) {
   return paragraphs.slice(0, count).join("\n\n");
 }
 
+const comicTitles = [
+  "The Week in Ink",
+  "From the Editorial Desk",
+  "A View from the Pressroom",
+  "The Cartoonist's Corner",
+  "This Week's Editorial Cartoon",
+];
+
+const comicKickers = ["Editorial Cartoon", "Opinion", "The Ink Desk"];
+
+function comicCreator(creator?: string) {
+  if (creator?.toLowerCase().includes("nast")) return "Thomas Nast";
+  return creator || "Staff Artist";
+}
+
 export function generateStory(seed: string, options: GeneratorOptions, index = 0): NewsStory {
   const rng = seededRandom(`${seed}:${index}`);
   const category = resolveCategory(options.category, rng);
@@ -84,6 +99,32 @@ export function generateStories(seed: string, count: number, options: GeneratorO
   return Array.from({ length: count }, (_, index) => generateStory(seed, options, index));
 }
 
+export function generateComic(seed: string, index = 0): NewsStory {
+  const rng = seededRandom(`${seed}:comic:${index}`);
+  const illustrationId = randomCartoon(rng);
+  const illustration = illustrationById.get(illustrationId);
+  return {
+    id: makeId("comic"),
+    title: pick(rng, comicTitles),
+    kicker: pick(rng, comicKickers),
+    dek: "",
+    byline: comicCreator(illustration?.creator),
+    location: "",
+    body: "",
+    kind: "comic",
+    width: "standard",
+    category: illustration?.category ?? "civic",
+    generated: true,
+    locked: false,
+    illustrationId,
+  };
+}
+
+export function ensureComicColumn(seed: string, stories: NewsStory[]) {
+  if (stories.some((story) => story.kind === "comic")) return stories;
+  return [...stories, generateComic(seed, stories.length)];
+}
+
 export function createBlankStory(): NewsStory {
   return {
     id: makeId("custom"),
@@ -102,9 +143,9 @@ export function createBlankStory(): NewsStory {
   };
 }
 
-export function createInitialIssue(): NewspaperIssue {
-  const seed = "blackwater-press";
+export function createInitialIssue(seed = "blackwater-press"): NewspaperIssue {
   const filler = generateStories(seed, 5, { category: "any", tone: "straight", length: "standard" });
+  const comic = generateComic(seed);
   const preset = getNewspaperPreset("blackwater");
   const lead: NewsStory = {
     id: "custom-lead",
@@ -131,7 +172,7 @@ export function createInitialIssue(): NewspaperIssue {
       volume: "XLII",
       issueNumber: "118",
     },
-    stories: [lead, ...filler],
+    stories: [lead, filler[0], filler[1], comic, ...filler.slice(2)],
   };
 }
 

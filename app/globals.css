@@ -539,8 +539,34 @@ button:disabled {
 .story-brief h2,
 .story-notice h2,
 .story-advert h2,
-.story-obituary h2 {
+.story-obituary h2,
+.story-comic h2 {
   font-size: calc(18px * var(--headline-scale));
+}
+
+.story-comic {
+  border-top: 3px double var(--news-accent);
+  border-bottom: 3px double var(--news-accent);
+  text-align: center;
+}
+
+.with-rules .story-comic {
+  border-bottom: 3px double var(--news-accent);
+}
+
+.story-comic .story-kicker {
+  margin-top: 1px;
+}
+
+.story-comic .story-art {
+  margin-block: 7px 5px;
+  border: 1px solid rgba(30, 30, 27, 0.42);
+}
+
+.story-comic .story-byline {
+  margin-top: 4px;
+  border-top: 0;
+  text-align: right;
 }
 
 .story-advert,

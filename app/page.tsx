@@ -20,6 +20,8 @@ import type { IllustrationKind } from "@/lib/news/illustrations";
 import {
   createBlankStory,
   createInitialIssue,
+  ensureComicColumn,
+  generateComic,
   generateStories,
   generateStory,
   makeId,
@@ -130,6 +132,13 @@ export default function Home() {
     setSelectedId(story.id);
   }
 
+  function addComic() {
+    const seed = nextSeed(issue.seed);
+    const comic = generateComic(seed, issue.stories.length);
+    setIssue((current) => ({ ...current, seed, stories: [...current.stories, comic] }));
+    setSelectedId(comic.id);
+  }
+
   function addGenerated(count = generatorCount) {
     const seed = nextSeed(issue.seed);
     const stories = generateStories(seed, count, generator);
@@ -174,11 +183,13 @@ export default function Home() {
   function rerollSelectedStory() {
     if (!selectedStory) return;
     const seed = nextSeed(issue.seed);
-    const next = generateStory(seed, {
-      ...generator,
-      category: selectedStory.category,
-      length: selectedStory.kind === "brief" ? "brief" : generator.length,
-    });
+    const next = selectedStory.kind === "comic"
+      ? generateComic(seed)
+      : generateStory(seed, {
+        ...generator,
+        category: selectedStory.category,
+        length: selectedStory.kind === "brief" ? "brief" : generator.length,
+      });
     setIssue((current) => ({
       ...current,
       seed,
@@ -188,8 +199,9 @@ export default function Home() {
 
   function randomizeStoryArt(kind?: IllustrationKind) {
     if (!selectedStory) return;
-    const artworkRng = seededRandom(`${issue.seed}:${selectedStory.id}:${kind ?? "any"}:${Date.now()}`);
-    updateStory("illustrationId", randomIllustrationForCategory(selectedStory.category, artworkRng, kind));
+    const resolvedKind = kind ?? (selectedStory.kind === "comic" ? "cartoon" : undefined);
+    const artworkRng = seededRandom(`${issue.seed}:${selectedStory.id}:${resolvedKind ?? "any"}:${Date.now()}`);
+    updateStory("illustrationId", randomIllustrationForCategory(selectedStory.category, artworkRng, resolvedKind));
   }
 
   function rerollFillers() {
@@ -200,11 +212,13 @@ export default function Home() {
       seed,
       stories: current.stories.map((story) => {
         if (!story.generated || story.locked) return story;
-        const replacement = generateStory(seed, {
-          ...generator,
-          category: generator.category === "any" ? story.category : generator.category,
-          length: story.kind === "brief" ? "brief" : generator.length,
-        }, generatedIndex++);
+        const replacement = story.kind === "comic"
+          ? generateComic(seed, generatedIndex++)
+          : generateStory(seed, {
+            ...generator,
+            category: generator.category === "any" ? story.category : generator.category,
+            length: story.kind === "brief" ? "brief" : generator.length,
+          }, generatedIndex++);
         return { ...replacement, id: story.id };
       }),
     }));
@@ -213,28 +227,32 @@ export default function Home() {
   function rollWholeIssue() {
     const seed = nextSeed(issue.seed);
     const rng = seededRandom(seed);
-    setIssue((current) => ({
-      ...current,
-      seed,
-      settings: {
-        ...current.settings,
-        newspaperName: randomNewspaperName(rng),
-        motto: randomMotto(rng),
-        publicationDate: randomDate(rng),
-        dateline: `${randomLocation(rng)} & the surrounding provinces`,
-        issueNumber: String(1 + Math.floor(rng() * 250)),
-      },
-      stories: current.stories.map((story, index) => {
+    setIssue((current) => {
+      const stories = current.stories.map((story, index) => {
         if (!story.generated || story.locked) return story;
-        const replacement = generateStory(seed, { category: "any", tone: generator.tone, length: generator.length }, index);
+        const replacement = story.kind === "comic"
+          ? generateComic(seed, index)
+          : generateStory(seed, { category: "any", tone: generator.tone, length: generator.length }, index);
         return { ...replacement, id: story.id };
-      }),
-    }));
+      });
+      return {
+        ...current,
+        seed,
+        settings: {
+          ...current.settings,
+          newspaperName: randomNewspaperName(rng),
+          motto: randomMotto(rng),
+          publicationDate: randomDate(rng),
+          dateline: `${randomLocation(rng)} & the surrounding provinces`,
+          issueNumber: String(1 + Math.floor(rng() * 250)),
+        },
+        stories: ensureComicColumn(seed, stories),
+      };
+    });
   }
 
   function createFreshIssue() {
-    const fresh = createInitialIssue();
-    fresh.seed = nextSeed(fresh.seed);
+    const fresh = createInitialIssue(nextSeed(issue.seed));
     fresh.settings.newspaperName = randomNewspaperName(seededRandom(fresh.seed));
     setIssue(fresh);
     setSelectedId(fresh.stories[0].id);
@@ -300,6 +318,7 @@ export default function Home() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onAdd={addStory}
+            onAddComic={addComic}
             onGenerate={() => addGenerated(1)}
             onDelete={deleteStory}
             onDuplicate={duplicateStory}
@@ -309,7 +328,7 @@ export default function Home() {
           <section className="preview-stage" aria-label="Newspaper preview">
             <div className="preview-stage-header">
               <div><span className="preview-dot" /> Live front page</div>
-              <span>{issue.settings.columns} columns · {issue.stories.length} stories</span>
+              <span>{issue.settings.columns} columns · {issue.stories.filter((story) => story.kind !== "comic").length} stories · {issue.stories.filter((story) => story.kind === "comic").length} comics</span>
             </div>
             <div className="page-scroll">
               <div className="page-zoom" style={{ zoom: `${zoom}%` }}>

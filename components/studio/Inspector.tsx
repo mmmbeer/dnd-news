@@ -128,7 +128,7 @@ export function Inspector(props: InspectorProps) {
           {story ? (
             <>
               <div className="section-heading">
-                <div><span className="eyebrow">Selected story</span><h2>Story desk</h2></div>
+                <div><span className="eyebrow">Selected {story.kind === "comic" ? "comic" : "story"}</span><h2>{story.kind === "comic" ? "Comic desk" : "Story desk"}</h2></div>
                 {story.generated && <span className="status-chip">Generated</span>}
               </div>
 
@@ -143,10 +143,10 @@ export function Inspector(props: InspectorProps) {
                   <Input value={story.location} onChange={(event) => onStoryChange("location", event.target.value.toUpperCase())} />
                 </Field>
               </div>
-              <Field label="Deck / summary">
+              <Field label={story.kind === "comic" ? "Caption" : "Deck / summary"}>
                 <Textarea value={story.dek} rows={3} onChange={(event) => onStoryChange("dek", event.target.value)} />
               </Field>
-              <Field label="Byline">
+              <Field label={story.kind === "comic" ? "Artist credit" : "Byline"}>
                 <div className="inline-field">
                   <Input value={story.byline} onChange={(event) => onStoryChange("byline", event.target.value)} />
                   <Button variant="outline" size="icon" onClick={onRollByline} aria-label="Randomize byline"><UserRound /></Button>
@@ -202,6 +202,7 @@ export function Inspector(props: InspectorProps) {
                     <NativeSelectOption value="notice">Notice</NativeSelectOption>
                     <NativeSelectOption value="advert">Advert</NativeSelectOption>
                     <NativeSelectOption value="obituary">Obituary</NativeSelectOption>
+                    <NativeSelectOption value="comic">Comic column</NativeSelectOption>
                   </NativeSelect>
                 </Field>
                 <Field label="Width">
@@ -220,7 +221,7 @@ export function Inspector(props: InspectorProps) {
                 </Field>
               </div>
 
-              <Field label="Story body" hint={`${story.body.trim().split(/\s+/).filter(Boolean).length} words · Blank lines create paragraphs`}>
+              <Field label={story.kind === "comic" ? "Additional copy" : "Story body"} hint={`${story.body.trim().split(/\s+/).filter(Boolean).length} words · Blank lines create paragraphs`}>
                 <Textarea className="story-body-input" value={story.body} rows={13} onChange={(event) => onStoryChange("body", event.target.value)} />
               </Field>
               <div className="switch-row compact">
@@ -228,7 +229,7 @@ export function Inspector(props: InspectorProps) {
                 <Switch checked={story.locked} onCheckedChange={(value) => onStoryChange("locked", value)} aria-label="Lock this story" />
               </div>
               <Button variant="outline" className="full-button" onClick={onRandomizeStory} disabled={!story.generated && story.locked}>
-                <RefreshCw /> Rewrite from generator
+                <RefreshCw /> {story.kind === "comic" ? "Reroll comic" : "Rewrite from generator"}
               </Button>
             </>
           ) : <p className="empty-message">Select a story to edit it.</p>}
@@ -386,7 +387,7 @@ export function Inspector(props: InspectorProps) {
           <div className="generator-notes">
             <strong>Story library</strong>
             <p>110 distinct templates across eleven sections combine civic disputes, guild news, crimes, magical events, markets, travel hazards, weather, gossip, culture, adventure hooks and public notices.</p>
-            <span>50 matched line-art illustrations are assigned by story template.</span>
+            <span>61 public-domain engravings can appear as story art. Editorial cartoons are generated as their own columns.</span>
             <span>DM-written and locked stories are never replaced.</span>
           </div>
         </TabsContent>
