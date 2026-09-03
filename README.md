@@ -22,3 +22,15 @@ npm run dev
 ```
 
 Create a production build with `npm run build`.
+
+The production build is a static export in `dist/`.
+
+## Cloudflare Pages
+
+Connect this repository to Cloudflare Pages with these settings:
+
+- Production branch: `main`
+- Build command: `npm run build`
+- Build output directory: `dist`
+
+No runtime environment variables or server process are required.
