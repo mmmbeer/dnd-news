@@ -13,6 +13,7 @@ import {
   Plus,
   Printer,
   RefreshCw,
+  Share2,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -65,6 +66,7 @@ interface StudioSidebarProps {
   onRollDateline: () => void;
   onPrint: () => void;
   onExport: () => void;
+  onShare: () => void;
 }
 
 function Field({ id, label, children, hint }: { id?: string; label: string; children: React.ReactNode; hint?: string }) {
@@ -139,6 +141,7 @@ export function StudioSidebar(props: StudioSidebarProps) {
     onRollDateline,
     onPrint,
     onExport,
+    onShare,
   } = props;
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -380,6 +383,7 @@ export function StudioSidebar(props: StudioSidebarProps) {
               <div><dt>Images</dt><dd>{stories.filter((story) => story.illustrationId).length} placed</dd></div>
             </dl>
             <Button className="full-button" onClick={onPrint}><Printer /> Print or save PDF</Button>
+            <Button className="full-button" onClick={onShare}><Share2 /> Save and share</Button>
             <Button variant="outline" className="full-button" onClick={onExport}><Download /> Export editable issue</Button>
             <p className="finalize-note">Return to Layout or Stories to resume editing.</p>
           </section>

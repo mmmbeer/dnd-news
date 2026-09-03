@@ -17,6 +17,9 @@ Broadsheet is a local-first fantasy newspaper studio for tabletop campaigns. It 
 - Autosave on the current device
 - Import and export complete issues as JSON
 - Print directly or save as PDF
+- Save an immutable, read-only edition behind a UUID share link
+- Display or download a QR code for a shared edition
+- Automatically expire and delete shared editions after 30 days
 - Match stories with square public-domain engravings and editorial cartoons
 
 ## Historical art
@@ -32,27 +35,31 @@ npm ci
 npm run dev
 ```
 
-Create a production build with `npm run build`.
+Create a production Worker build with `npm run build`.
 
-The production build is a static export in `dist/`.
+The production build is written to `dist/`, with the Worker entry point at
+`dist/server/index.js` and public assets in `dist/client/`.
 
-## Cloudflare Pages
+## Shared newspaper storage
 
-Connect this repository to Cloudflare Pages with these settings:
+The editor remains local-first. Selecting **Save and share** stores a separate,
+immutable issue snapshot in the `newspaper_snapshots` D1 table. Public UUID
+links render that snapshot without editor controls. Expired rows are rejected
+and deleted during reads and writes, while the scheduled Worker cleanup removes
+expired rows daily.
 
-- Production branch: `main`
-- Build command: `npm run build`
-- Build output directory: `dist`
-
-No runtime environment variables or server process are required.
+The managed Sites deployment provisions the logical `DB` binding declared in
+`.openai/hosting.json` and applies the checked-in Drizzle migration.
 
 ## Cloudflare Workers
 
-The repository can also deploy as an assets-only Cloudflare Worker using
-`wrangler.jsonc`. In Workers Builds, use:
+This application now requires a Worker and a D1 database. It can no longer be
+deployed as a static Cloudflare Pages export. For a direct Wrangler deployment,
+add the production D1 database ID to the `DB` binding in `wrangler.jsonc`, then
+run:
 
-- Build command: `npm run build`
-- Deploy command: `npx wrangler deploy`
-
-Do not select the OpenNext preset. This application is exported as static files
-and does not produce an OpenNext standalone server bundle.
+```bash
+npm run build
+npx wrangler d1 migrations apply DB --remote
+npx wrangler deploy
+```

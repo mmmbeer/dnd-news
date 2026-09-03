@@ -7,6 +7,7 @@ import {
   Printer,
   RefreshCw,
   Save,
+  Share2,
   Sparkles,
   Upload,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ImagePickerDialog } from "@/components/studio/ImagePickerDialog";
 import { NewspaperPage } from "@/components/studio/NewspaperPage";
 import { StoryEditorDialog } from "@/components/studio/StoryEditorDialog";
+import { ShareNewspaperDialog, type ShareSnapshot } from "@/components/studio/ShareNewspaperDialog";
 import { StudioSidebar, type StudioTab } from "@/components/studio/StudioSidebar";
 import {
   createBlankStory,
@@ -75,6 +77,10 @@ export default function Home() {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [saveLabel, setSaveLabel] = useState("Opening issue…");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [shareSnapshot, setShareSnapshot] = useState<ShareSnapshot | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -307,6 +313,29 @@ export default function Home() {
     }
   }
 
+  async function shareIssue() {
+    const issueSnapshot = issue;
+    setShareOpen(true);
+    setShareLoading(true);
+    setShareError(null);
+    setShareSnapshot(null);
+
+    try {
+      const response = await fetch("/api/newspapers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issue: issueSnapshot }),
+      });
+      const data = await response.json() as ShareSnapshot & { error?: string };
+      if (!response.ok) throw new Error(data.error || "The share link could not be created.");
+      setShareSnapshot({ url: data.url, expiresAt: data.expiresAt });
+    } catch (reason) {
+      setShareError(reason instanceof Error ? reason.message : "The share link could not be created.");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
   const rng = () => seededRandom(`${issue.seed}:${Date.now()}`);
 
   return (
@@ -324,6 +353,7 @@ export default function Home() {
             <span className="toolbar-divider" />
             <Button variant="ghost" size="sm" onClick={() => fileInput.current?.click()}><Upload /> Import</Button>
             <Button variant="ghost" size="sm" onClick={exportIssue}><Download /> Export</Button>
+            <Button variant="ghost" size="sm" onClick={shareIssue}><Share2 /> Share</Button>
             <Button variant="ghost" size="sm" onClick={() => window.print()}><Printer /> Print / PDF</Button>
             <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={(event) => event.target.files?.[0] && importIssue(event.target.files[0])} />
           </div>
@@ -364,6 +394,7 @@ export default function Home() {
             onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
             onPrint={() => window.print()}
             onExport={exportIssue}
+            onShare={shareIssue}
           />
 
           <section className="preview-stage" aria-label="Newspaper preview">
@@ -411,6 +442,15 @@ export default function Home() {
             onApply={(illustrationId) => updateStory("illustrationId", illustrationId)}
           />
         )}
+        <ShareNewspaperDialog
+          open={shareOpen}
+          issueName={issue.settings.newspaperName}
+          loading={shareLoading}
+          error={shareError}
+          snapshot={shareSnapshot}
+          onOpenChange={setShareOpen}
+          onRetry={shareIssue}
+        />
 
         <div className="mobile-note"><RefreshCw /> For the full layout desk, use a tablet or larger screen.</div>
       </div>

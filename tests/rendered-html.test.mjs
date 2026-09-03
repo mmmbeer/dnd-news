@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("exports a complete static application shell", async () => {
-  const html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
+test("builds the newspaper application as a share-capable Worker", async () => {
+  const worker = await readFile(new URL("../dist/server/index.js", import.meta.url), "utf8");
 
-  assert.match(html, /^<!DOCTYPE html>/i);
-  assert.match(html, /<title>Broadsheet — Fantasy Newspaper Studio<\/title>/);
-  assert.match(html, /class="studio-shell"/);
-  assert.match(html, /\/_next\/static\/chunks\//);
+  assert.match(worker, /Broadsheet — Fantasy Newspaper Studio/);
+  assert.match(worker, /newspaper_snapshots/);
+  assert.match(worker, /async scheduled\(/);
+  await access(new URL("../dist/client/favicon.svg", import.meta.url));
+  await access(new URL("../dist/.openai/drizzle/0000_dashing_albert_cleary.sql", import.meta.url));
 });

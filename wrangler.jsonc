@@ -1,10 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dnd-news",
+  "main": "./dist/server/index.js",
   "compatibility_date": "2026-09-03",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./dist",
-    "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
+    "binding": "ASSETS",
+    "directory": "./dist/client",
+    "not_found_handling": "none"
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
   }
 }
