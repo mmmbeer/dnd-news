@@ -91,7 +91,7 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
           return (
             <article
               key={story.id}
-              className={`newspaper-story story-${story.kind} ${selectedId === story.id ? "is-selected" : ""}`}
+              className={`newspaper-story story-${story.kind} story-${story.width} ${selectedId === story.id ? "is-selected" : ""}`}
               style={{ gridColumn: `span ${span}` }}
               onClick={() => onSelect(story.id)}
               tabIndex={0}
@@ -105,8 +105,12 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
               {story.dek && <p className="story-dek">{story.dek}</p>}
               <div className="story-byline">By {story.byline}</div>
               {illustration && (
-                <figure className="story-illustration">
-                  <Image src={illustration.src} alt={illustration.alt} width={320} height={240} />
+                <figure
+                  className={`story-art story-art-${illustration.kind}`}
+                  title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
+                >
+                  <Image src={illustration.src} alt={illustration.alt} width={512} height={512} />
+                  {illustration.kind === "cartoon" && <figcaption>Editorial cartoon</figcaption>}
                 </figure>
               )}
               <StoryBody story={story} columns={settings.columns} />

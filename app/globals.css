@@ -580,28 +580,58 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.story-lead .story-byline {
-  text-align: center;
+.story-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  margin: 7px 0 9px;
+  overflow: hidden;
+  border-top: 1px solid rgba(30, 30, 27, 0.32);
+  border-bottom: 1px solid rgba(30, 30, 27, 0.32);
+  background: #fff;
 }
 
-.story-illustration {
-  display: flex;
-  justify-content: center;
-  margin: 7px 0 8px;
-  break-inside: avoid;
-}
-
-.story-illustration img {
-  width: min(100%, 150px);
-  max-height: 118px;
+.story-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: grayscale(1) contrast(1.2);
   mix-blend-mode: multiply;
 }
 
-.story-lead .story-illustration img {
-  width: min(100%, 310px);
-  max-height: 180px;
+.story-art figcaption {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #22221f;
+  font-size: 6.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.story-lead .story-art {
+  float: left;
+  width: min(43%, 340px);
+  margin: 4px 16px 10px 0;
+}
+
+.story-wide .story-art {
+  float: left;
+  width: 48%;
+  margin-right: 12px;
+}
+
+.newspaper-story::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.story-lead .story-byline {
+  text-align: center;
 }
 
 .newspaper-copy {
@@ -692,6 +722,57 @@ button:disabled {
   color: #abb0aa;
   font-size: 13px;
   line-height: 1.45;
+}
+
+.art-control-preview {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  border: 1px solid #3c433e;
+  background: #1d211e;
+}
+
+.art-control-preview img {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.art-control-preview span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.art-control-preview strong,
+.art-control-preview small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.art-control-preview strong {
+  color: #e3e2dc;
+  font-size: 12px;
+}
+
+.art-control-preview small {
+  color: #858d86;
+  font-size: 10px;
+}
+
+.art-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 5px;
+}
+
+.art-action-row button {
+  min-width: 0;
 }
 
 .field-stack {
@@ -922,16 +1003,6 @@ button:disabled {
 .illustration-picker {
   display: grid;
   gap: 7px;
-}
-
-.illustration-picker-preview {
-  width: 100%;
-  height: 92px;
-  padding: 5px;
-  border: 1px solid #3f4540;
-  background: #eeeade;
-  object-fit: contain;
-  filter: grayscale(1) contrast(1.2);
 }
 
 .segmented-control {

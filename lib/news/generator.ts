@@ -1,4 +1,4 @@
-import { storyIllustrations } from "./illustrations";
+import { randomIllustration, type IllustrationKind } from "./illustrations";
 import { getNewspaperPreset } from "./presets";
 import {
   chance,
@@ -62,7 +62,7 @@ export function generateStory(seed: string, options: GeneratorOptions, index = 0
   const template = pick(rng, templatesForCategory(category));
   const copy = renderStoryTemplate(template, options.tone, rng);
   const kind = options.length === "brief" && !copy.kind ? "brief" : copy.kind ?? "news";
-
+  const illustrationId = chance(rng, 0.58) ? copy.illustrationId : randomIllustration(category, rng);
   return {
     id: makeId("generated"),
     title: copy.title,
@@ -76,7 +76,7 @@ export function generateStory(seed: string, options: GeneratorOptions, index = 0
     category,
     generated: true,
     locked: false,
-    illustrationId: copy.illustrationId,
+    illustrationId,
   };
 }
 
@@ -135,8 +135,12 @@ export function createInitialIssue(): NewspaperIssue {
   };
 }
 
-export function randomIllustrationForCategory(category: Exclude<StoryCategory, "any">, rng: () => number = Math.random) {
-  return pick(rng, storyIllustrations.filter((illustration) => illustration.category === category)).id;
+export function randomIllustrationForCategory(
+  category: Exclude<StoryCategory, "any">,
+  rng: () => number = Math.random,
+  kind?: IllustrationKind,
+) {
+  return randomIllustration(category, rng, kind);
 }
 
 export {

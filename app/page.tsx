@@ -16,6 +16,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Inspector } from "@/components/studio/Inspector";
 import { NewspaperPage } from "@/components/studio/NewspaperPage";
 import { StoryRail } from "@/components/studio/StoryRail";
+import type { IllustrationKind } from "@/lib/news/illustrations";
 import {
   createBlankStory,
   createInitialIssue,
@@ -185,6 +186,12 @@ export default function Home() {
     }));
   }
 
+  function randomizeStoryArt(kind?: IllustrationKind) {
+    if (!selectedStory) return;
+    const artworkRng = seededRandom(`${issue.seed}:${selectedStory.id}:${kind ?? "any"}:${Date.now()}`);
+    updateStory("illustrationId", randomIllustrationForCategory(selectedStory.category, artworkRng, kind));
+  }
+
   function rerollFillers() {
     const seed = nextSeed(issue.seed);
     let generatedIndex = 0;
@@ -330,7 +337,7 @@ export default function Home() {
             onRollDate={() => updateSettings("publicationDate", randomDate(rng()))}
             onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
             onRollByline={() => updateStory("byline", randomByline(generator.tone, rng()))}
-            onRollIllustration={() => selectedStory && updateStory("illustrationId", randomIllustrationForCategory(selectedStory.category, rng()))}
+            onRollIllustration={randomizeStoryArt}
           />
         </div>
 

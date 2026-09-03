@@ -1,11 +1,20 @@
 import type { StoryCategory } from "./types";
+import publicDomainCatalog from "./public-domain-art.json";
+
+export type IllustrationKind = "generated" | "historical" | "cartoon";
 
 export interface StoryIllustration {
   id: string;
   label: string;
   alt: string;
   category: Exclude<StoryCategory, "any">;
+  categories: Exclude<StoryCategory, "any">[];
+  kind: IllustrationKind;
   src: string;
+  sourceTitle?: string;
+  creator?: string;
+  sourcePage?: string;
+  license?: string;
 }
 
 const rows: Array<[string, string, string, Exclude<StoryCategory, "any">]> = [
@@ -61,13 +70,49 @@ const rows: Array<[string, string, string, Exclude<StoryCategory, "any">]> = [
   ["auction-gavel", "Auction gavel", "A wooden gavel beside a numbered placard", "notices"],
 ];
 
-export const storyIllustrations: StoryIllustration[] = rows.map(([id, label, alt, category]) => ({
-  id, label, alt, category, src: `/illustrations/${id}.png`,
+const generatedIllustrations: StoryIllustration[] = rows.map(([id, label, alt, category]) => ({
+  id,
+  label,
+  alt,
+  category,
+  categories: [category],
+  kind: "generated",
+  src: `/illustrations/${id}.png`,
 }));
 
-export const illustrationById = new Map(storyIllustrations.map((illustration) => [illustration.id, illustration]));
+const publicDomainIllustrations: StoryIllustration[] = publicDomainCatalog.map((artwork, index) => ({
+  id: artwork.id,
+  label: artwork.kind === "cartoon"
+    ? `Editorial cartoon ${String(index - 60).padStart(2, "0")}`
+    : `Historical engraving ${String(index + 1).padStart(2, "0")}`,
+  alt: artwork.alt,
+  category: artwork.categories[0] as Exclude<StoryCategory, "any">,
+  categories: artwork.categories as Exclude<StoryCategory, "any">[],
+  kind: artwork.kind === "cartoon" ? "cartoon" : "historical",
+  src: artwork.src,
+  sourceTitle: artwork.sourceTitle,
+  creator: artwork.creator,
+  sourcePage: artwork.sourcePage,
+  license: artwork.license,
+}));
 
-export function randomIllustration(category: Exclude<StoryCategory, "any">, rng: () => number = Math.random) {
-  const matches = storyIllustrations.filter((illustration) => illustration.category === category);
-  return matches[Math.floor(rng() * matches.length)]?.id ?? storyIllustrations[0].id;
+export const storyIllustrations = [...generatedIllustrations, ...publicDomainIllustrations];
+
+export const illustrationById = new Map(storyIllustrations.map((illustration) => [illustration.id, illustration]));
+const cartoonFriendlyCategories = new Set<Exclude<StoryCategory, "any">>([
+  "civic", "guilds", "crime", "trade", "society", "culture",
+]);
+
+export function randomIllustration(
+  category: Exclude<StoryCategory, "any">,
+  rng: () => number = Math.random,
+  requestedKind?: IllustrationKind,
+) {
+  const roll = rng();
+  const kind = requestedKind
+    ?? (cartoonFriendlyCategories.has(category) && roll < 0.16 ? "cartoon" : roll < 0.62 ? "historical" : "generated");
+  const kindMatches = storyIllustrations.filter((illustration) => illustration.kind === kind);
+  const categoryMatches = kindMatches.filter((illustration) => illustration.categories.includes(category));
+  const candidates = categoryMatches.length ? categoryMatches : kindMatches;
+  return candidates[Math.floor(rng() * candidates.length)]?.id ?? storyIllustrations[0].id;
 }

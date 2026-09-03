@@ -1,17 +1,17 @@
 "use client";
 
-import { CalendarDays, ImageIcon, MapPin, Newspaper, RefreshCw, Sparkles, UserRound } from "lucide-react";
+import { CalendarDays, ImageIcon, ImageOff, MapPin, MessageSquareQuote, Newspaper, RefreshCw, Sparkles, UserRound } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { categoryLabels } from "@/lib/news/generator";
-import { illustrationById, storyIllustrations } from "@/lib/news/illustrations";
+import { illustrationById, storyIllustrations, type IllustrationKind } from "@/lib/news/illustrations";
 import { newspaperPresets } from "@/lib/news/presets";
 import type {
   GeneratorOptions,
@@ -44,7 +44,7 @@ interface InspectorProps {
   onRollDate: () => void;
   onRollDateline: () => void;
   onRollByline: () => void;
-  onRollIllustration: () => void;
+  onRollIllustration: (kind?: IllustrationKind) => void;
 }
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -113,6 +113,7 @@ export function Inspector(props: InspectorProps) {
     onRollByline,
     onRollIllustration,
   } = props;
+  const selectedIllustration = illustrationById.get(story?.illustrationId ?? "");
 
   return (
     <aside className="inspector" aria-label="Newspaper controls">
@@ -152,20 +153,43 @@ export function Inspector(props: InspectorProps) {
                 </div>
               </Field>
 
-              <Field label="Featured illustration" hint="Generated stories receive an illustration matched to their template.">
+              <Field label="Featured art" hint={`${storyIllustrations.length} available images, including 74 provenance-tracked public-domain engravings and cartoons.`}>
                 <div className="illustration-picker">
                   <div className="inline-field">
                     <NativeSelect value={story.illustrationId ?? ""} onChange={(event) => onStoryChange("illustrationId", event.target.value || null)}>
-                      <NativeSelectOption value="">No illustration</NativeSelectOption>
-                      {storyIllustrations.map((illustration) => (
-                        <NativeSelectOption key={illustration.id} value={illustration.id}>{categoryLabels[illustration.category]} · {illustration.label}</NativeSelectOption>
-                      ))}
+                      <NativeSelectOption value="">No featured art</NativeSelectOption>
+                      <NativeSelectOptGroup label="Generated story illustrations">
+                        {storyIllustrations.filter((illustration) => illustration.kind === "generated").map((illustration) => (
+                          <NativeSelectOption key={illustration.id} value={illustration.id}>{categoryLabels[illustration.category]} · {illustration.label}</NativeSelectOption>
+                        ))}
+                      </NativeSelectOptGroup>
+                      <NativeSelectOptGroup label="Public-domain historical engravings">
+                        {storyIllustrations.filter((illustration) => illustration.kind === "historical").map((illustration) => (
+                          <NativeSelectOption key={illustration.id} value={illustration.id}>{illustration.label} · {categoryLabels[illustration.category]}</NativeSelectOption>
+                        ))}
+                      </NativeSelectOptGroup>
+                      <NativeSelectOptGroup label="Public-domain editorial cartoons">
+                        {storyIllustrations.filter((illustration) => illustration.kind === "cartoon").map((illustration) => (
+                          <NativeSelectOption key={illustration.id} value={illustration.id}>{illustration.label} · {categoryLabels[illustration.category]}</NativeSelectOption>
+                        ))}
+                      </NativeSelectOptGroup>
                     </NativeSelect>
-                    <Button variant="outline" size="icon" onClick={onRollIllustration} aria-label="Choose a matching illustration"><ImageIcon /></Button>
+                    <Button variant="outline" size="icon" onClick={() => onRollIllustration()} aria-label="Choose matching art"><ImageIcon /></Button>
                   </div>
-                  {story.illustrationId && illustrationById.get(story.illustrationId) && (
-                    <Image className="illustration-picker-preview" src={illustrationById.get(story.illustrationId)?.src ?? ""} alt="" width={240} height={180} />
+                  {selectedIllustration && (
+                    <div className="art-control-preview">
+                      <Image src={selectedIllustration.src} alt="" width={116} height={116} />
+                      <span>
+                        <strong>{selectedIllustration.label}</strong>
+                        <small>{selectedIllustration.creator ? `${selectedIllustration.creator} · ${selectedIllustration.license}` : categoryLabels[selectedIllustration.category]}</small>
+                      </span>
+                    </div>
                   )}
+                  <div className="art-action-row">
+                    <Button type="button" size="sm" variant="outline" onClick={() => onRollIllustration("historical")}><ImageIcon /> Historical</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => onRollIllustration("cartoon")}><MessageSquareQuote /> Cartoon</Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => onStoryChange("illustrationId", null)} disabled={!story.illustrationId}><ImageOff /> Remove</Button>
+                  </div>
                 </div>
               </Field>
 

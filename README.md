@@ -16,6 +16,13 @@ Broadsheet is a local-first fantasy newspaper studio for tabletop campaigns. It 
 - Autosave on the current device
 - Import and export complete issues as JSON
 - Print directly or save as PDF
+- Match stories with square public-domain engravings and editorial cartoons
+
+## Historical art
+
+The bundled art catalog contains 74 public-domain works sourced from Wikimedia Commons: 61 Gustave Doré engravings from the 1863 edition of *Don Quixote* and 13 nineteenth-century newspaper cartoons from *Harper's Weekly*. Every catalog entry preserves its source page, creator, date, collection, rights label and transformation note in `lib/news/public-domain-art.json`.
+
+The app uses locally processed 512 × 512 one-bit PNGs. The source art is fitted without destructive cropping, converted to grayscale and normalized with a locally adaptive line treatment for consistent newspaper reproduction.
 
 ## Development
 

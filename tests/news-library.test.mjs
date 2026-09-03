@@ -41,16 +41,25 @@ test("ships at least one hundred resolvable story templates", async () => {
   }
 });
 
-test("maps fifty image assets across the complete story library", async () => {
+test("maps the generated and public-domain art pools across the complete story library", async () => {
   const { storyIllustrations } = await vite.ssrLoadModule("/lib/news/illustrations.ts");
   const { storyTemplates } = await vite.ssrLoadModule("/lib/news/templates/index.ts");
   const known = new Set(storyIllustrations.map((illustration) => illustration.id));
   const used = new Set(storyTemplates.map((template) => template.illustrationId));
+  const counts = Object.groupBy(storyIllustrations, (illustration) => illustration.kind);
 
-  assert.equal(storyIllustrations.length, 50);
-  assert.equal(known.size, 50);
+  assert.equal(storyIllustrations.length, 124);
+  assert.equal(known.size, storyIllustrations.length);
+  assert.equal(counts.generated?.length, 50);
+  assert.equal(counts.historical?.length, 61);
+  assert.equal(counts.cartoon?.length, 13);
   assert.deepEqual([...used].filter((id) => !known.has(id)), []);
-  assert.deepEqual([...known].filter((id) => !used.has(id)), []);
+  assert.deepEqual(
+    storyIllustrations
+      .filter((illustration) => illustration.kind === "generated" && !used.has(illustration.id))
+      .map((illustration) => illustration.id),
+    [],
+  );
 
   await Promise.all(storyIllustrations.map((illustration) => access(`${root}/public${illustration.src}`)));
 });
