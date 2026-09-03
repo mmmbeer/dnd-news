@@ -1,7 +1,9 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import type { NewsStory, NewspaperIssue } from "@/lib/news/types";
+import { illustrationById } from "@/lib/news/illustrations";
 
 interface NewspaperPageProps {
   issue: NewspaperIssue;
@@ -85,6 +87,7 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
       <main className="newspaper-grid" style={{ gridTemplateColumns: `repeat(${settings.columns}, minmax(0, 1fr))` }}>
         {issue.stories.map((story) => {
           const span = storySpan(story, settings.columns);
+          const illustration = story.illustrationId ? illustrationById.get(story.illustrationId) : undefined;
           return (
             <article
               key={story.id}
@@ -101,6 +104,11 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
               <h2>{story.title}</h2>
               {story.dek && <p className="story-dek">{story.dek}</p>}
               <div className="story-byline">By {story.byline}</div>
+              {illustration && (
+                <figure className="story-illustration">
+                  <Image src={illustration.src} alt={illustration.alt} width={320} height={240} />
+                </figure>
+              )}
               <StoryBody story={story} columns={settings.columns} />
               {story.kind === "lead" && <div className="continued-mark">Continued inside</div>}
             </article>

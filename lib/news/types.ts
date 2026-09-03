@@ -26,6 +26,7 @@ export type StoryTone = "straight" | "sensational" | "gossipy" | "ominous";
 export type StoryLength = "brief" | "standard" | "long";
 export type ColorTheme = "charcoal" | "oxblood" | "navy" | "forest";
 export type PageSize = "broadsheet" | "tabloid" | "letter";
+export type NewspaperPresetId = "blackwater" | "crown-city" | "lantern" | "greenway" | "adventurer";
 
 export interface NewsStory {
   id: string;
@@ -40,6 +41,7 @@ export interface NewsStory {
   category: Exclude<StoryCategory, "any">;
   generated: boolean;
   locked: boolean;
+  illustrationId: string | null;
 }
 
 export interface IssueSettings {
@@ -64,6 +66,7 @@ export interface IssueSettings {
   showRules: boolean;
   justifyText: boolean;
   showDropCaps: boolean;
+  presetId: NewspaperPresetId;
 }
 
 export interface NewspaperIssue {

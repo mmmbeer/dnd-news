@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarDays, MapPin, Newspaper, RefreshCw, Sparkles, UserRound } from "lucide-react";
+import { CalendarDays, ImageIcon, MapPin, Newspaper, RefreshCw, Sparkles, UserRound } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { categoryLabels } from "@/lib/news/generator";
+import { illustrationById, storyIllustrations } from "@/lib/news/illustrations";
+import { newspaperPresets } from "@/lib/news/presets";
 import type {
   GeneratorOptions,
   IssueSettings,
@@ -19,6 +22,7 @@ import type {
   StoryLength,
   StoryTone,
   StoryWidth,
+  NewspaperPresetId,
 } from "@/lib/news/types";
 
 interface InspectorProps {
@@ -28,6 +32,7 @@ interface InspectorProps {
   generator: GeneratorOptions;
   generatorCount: number;
   onSettingsChange: <K extends keyof IssueSettings>(key: K, value: IssueSettings[K]) => void;
+  onApplyPreset: (presetId: NewspaperPresetId) => void;
   onStoryChange: <K extends keyof NewsStory>(key: K, value: NewsStory[K]) => void;
   onSeedChange: (value: string) => void;
   onGeneratorChange: <K extends keyof GeneratorOptions>(key: K, value: GeneratorOptions[K]) => void;
@@ -39,6 +44,7 @@ interface InspectorProps {
   onRollDate: () => void;
   onRollDateline: () => void;
   onRollByline: () => void;
+  onRollIllustration: () => void;
 }
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -93,6 +99,7 @@ export function Inspector(props: InspectorProps) {
     generator,
     generatorCount,
     onSettingsChange,
+    onApplyPreset,
     onStoryChange,
     onSeedChange,
     onGeneratorChange,
@@ -104,6 +111,7 @@ export function Inspector(props: InspectorProps) {
     onRollDate,
     onRollDateline,
     onRollByline,
+    onRollIllustration,
   } = props;
 
   return (
@@ -141,6 +149,23 @@ export function Inspector(props: InspectorProps) {
                 <div className="inline-field">
                   <Input value={story.byline} onChange={(event) => onStoryChange("byline", event.target.value)} />
                   <Button variant="outline" size="icon" onClick={onRollByline} aria-label="Randomize byline"><UserRound /></Button>
+                </div>
+              </Field>
+
+              <Field label="Featured illustration" hint="Generated stories receive an illustration matched to their template.">
+                <div className="illustration-picker">
+                  <div className="inline-field">
+                    <NativeSelect value={story.illustrationId ?? ""} onChange={(event) => onStoryChange("illustrationId", event.target.value || null)}>
+                      <NativeSelectOption value="">No illustration</NativeSelectOption>
+                      {storyIllustrations.map((illustration) => (
+                        <NativeSelectOption key={illustration.id} value={illustration.id}>{categoryLabels[illustration.category]} · {illustration.label}</NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                    <Button variant="outline" size="icon" onClick={onRollIllustration} aria-label="Choose a matching illustration"><ImageIcon /></Button>
+                  </div>
+                  {story.illustrationId && illustrationById.get(story.illustrationId) && (
+                    <Image className="illustration-picker-preview" src={illustrationById.get(story.illustrationId)?.src ?? ""} alt="" width={240} height={180} />
+                  )}
                 </div>
               </Field>
 
@@ -188,6 +213,22 @@ export function Inspector(props: InspectorProps) {
         <TabsContent value="layout" className="inspector-content">
           <div className="section-heading">
             <div><span className="eyebrow">Issue identity</span><h2>Design desk</h2></div>
+          </div>
+
+          <div className="inspector-divider"><span>Newspaper templates</span></div>
+          <div className="preset-grid" role="list" aria-label="Newspaper template defaults">
+            {newspaperPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                role="listitem"
+                className={`preset-card preset-${preset.settings.colorTheme} ${settings.presetId === preset.id ? "is-active" : ""}`}
+                onClick={() => onApplyPreset(preset.id)}
+              >
+                <span className="preset-card-mark">Aa</span>
+                <span><strong>{preset.name}</strong><small>{preset.description}</small></span>
+              </button>
+            ))}
           </div>
 
           <Field label="Newspaper name">
@@ -320,7 +361,8 @@ export function Inspector(props: InspectorProps) {
 
           <div className="generator-notes">
             <strong>Story library</strong>
-            <p>Eleven sections combine civic disputes, guild news, crimes, magical events, markets, travel hazards, weather, gossip, culture, adventure hooks and public notices.</p>
+            <p>110 distinct templates across eleven sections combine civic disputes, guild news, crimes, magical events, markets, travel hazards, weather, gossip, culture, adventure hooks and public notices.</p>
+            <span>50 matched line-art illustrations are assigned by story template.</span>
             <span>DM-written and locked stories are never replaced.</span>
           </div>
         </TabsContent>

@@ -24,12 +24,14 @@ import {
   makeId,
   randomByline,
   randomDate,
+  randomIllustrationForCategory,
   randomLocation,
   randomMotto,
   randomNewspaperName,
   seededRandom,
 } from "@/lib/news/generator";
-import type { GeneratorOptions, IssueSettings, NewsStory, NewspaperIssue } from "@/lib/news/types";
+import { applyNewspaperPreset } from "@/lib/news/presets";
+import type { GeneratorOptions, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
 
 const STORAGE_KEY = "broadsheet:issue:v1";
 
@@ -43,6 +45,19 @@ function isIssue(value: unknown): value is NewspaperIssue {
   return candidate.version === 1 && !!candidate.settings && Array.isArray(candidate.stories);
 }
 
+function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
+  const defaults = createInitialIssue();
+  return {
+    ...issue,
+    settings: {
+      ...defaults.settings,
+      ...issue.settings,
+      presetId: issue.settings.presetId ?? "blackwater",
+    },
+    stories: issue.stories.map((story) => ({ ...story, illustrationId: story.illustrationId ?? null })),
+  };
+}
+
 export default function Home() {
   const [issue, setIssue] = useState<NewspaperIssue>(() => createInitialIssue());
   const [selectedId, setSelectedId] = useState("custom-lead");
@@ -54,21 +69,25 @@ export default function Home() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (isIssue(parsed)) {
-          setIssue(parsed);
-          setSelectedId(parsed.stories[0]?.id ?? "");
-          setSaveLabel("Saved on this device");
+    const timeout = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (isIssue(parsed)) {
+            const restored = normalizeIssue(parsed);
+            setIssue(restored);
+            setSelectedId(restored.stories[0]?.id ?? "");
+            setSaveLabel("Saved on this device");
+          }
         }
+      } catch {
+        setSaveLabel("Sample issue loaded");
+      } finally {
+        setHydrated(true);
       }
-    } catch {
-      setSaveLabel("Sample issue loaded");
-    } finally {
-      setHydrated(true);
-    }
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -77,7 +96,6 @@ export default function Home() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(issue));
       setSaveLabel(`Saved ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
     }, 250);
-    setSaveLabel("Saving…");
     return () => window.clearTimeout(timeout);
   }, [issue, hydrated]);
 
@@ -95,6 +113,10 @@ export default function Home() {
       ...current,
       stories: current.stories.map((story) => story.id === selectedId ? { ...story, [key]: value } : story),
     }));
+  }
+
+  function applyPreset(presetId: NewspaperPresetId) {
+    setIssue((current) => ({ ...current, settings: applyNewspaperPreset(current.settings, presetId) }));
   }
 
   function updateGenerator<K extends keyof GeneratorOptions>(key: K, value: GeneratorOptions[K]) {
@@ -225,8 +247,9 @@ export default function Home() {
     try {
       const parsed = JSON.parse(await file.text());
       if (!isIssue(parsed)) throw new Error("Invalid issue");
-      setIssue(parsed);
-      setSelectedId(parsed.stories[0]?.id ?? "");
+      const restored = normalizeIssue(parsed);
+      setIssue(restored);
+      setSelectedId(restored.stories[0]?.id ?? "");
       setSaveLabel("Issue imported");
     } catch {
       setSaveLabel("Could not import that file");
@@ -295,6 +318,7 @@ export default function Home() {
             generator={generator}
             generatorCount={generatorCount}
             onSettingsChange={updateSettings}
+            onApplyPreset={applyPreset}
             onStoryChange={updateStory}
             onSeedChange={(seed) => setIssue((current) => ({ ...current, seed }))}
             onGeneratorChange={updateGenerator}
@@ -306,6 +330,7 @@ export default function Home() {
             onRollDate={() => updateSettings("publicationDate", randomDate(rng()))}
             onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
             onRollByline={() => updateStory("byline", randomByline(generator.tone, rng()))}
+            onRollIllustration={() => selectedStory && updateStory("illustrationId", randomIllustrationForCategory(selectedStory.category, rng()))}
           />
         </div>
 

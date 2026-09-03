@@ -7,6 +7,9 @@ Broadsheet is a local-first fantasy newspaper studio for tabletop campaigns. It 
 - Write, duplicate, reorder, resize and format campaign stories
 - Generate local news across eleven fantasy sections
 - Randomize newspaper names, bylines, datelines, dates and issue details
+- Start from five complete newspaper design defaults
+- Generate from 110 story templates with reusable placeholder helpers
+- Match generated stories to 50 selectable fantasy line illustrations
 - Adjust masthead, headline and body typography
 - Choose page size, column count, accent ink and paper treatment
 - Preserve DM-written or locked stories while rerolling filler
