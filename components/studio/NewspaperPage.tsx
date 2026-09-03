@@ -10,6 +10,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
+import { InlineTextFormattingController } from "@/components/studio/InlineTextFormattingController";
 import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverlay";
 import { fontFamilyFor } from "@/lib/news/fonts";
 import type { NewsStory, NewspaperIssue, IssueSettings } from "@/lib/news/types";
@@ -551,6 +552,12 @@ export function NewspaperPage({
         <span>Printed under charter of the Free Press Guild</span>
         <span>Late notices accepted until third bell</span>
       </footer>
+      <InlineTextFormattingController
+        issue={issue}
+        editable={!finalized}
+        onStoryChange={onStoryChange}
+        onSettingsChange={onSettingsChange}
+      />
       <PaperWeatheringOverlay paperAge={settings.paperTone} enabled={settings.paperWeathering !== false} />
     </div>
   );

@@ -40,6 +40,16 @@ export type NewspaperPresetId =
   | "arcane-herald"
   | "frontier";
 
+export interface TextRegionStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  fontStyle?: "normal" | "italic";
+  textAlign?: "left" | "center" | "right" | "justify";
+}
+
+export type TextRegionStyles = Record<string, TextRegionStyle>;
+
 export interface NewsStory {
   id: string;
   title: string;
@@ -56,6 +66,7 @@ export interface NewsStory {
   illustrationId: string | null;
   illustrationAlign: IllustrationAlignment;
   illustrationCaption?: string;
+  textStyles?: TextRegionStyles;
   /** Explicit layout overrides set by the handles in the page editor. */
   columnSpan?: number;
   bodyColumns?: number;
@@ -87,6 +98,7 @@ export interface IssueSettings {
   justifyText: boolean;
   showDropCaps: boolean;
   presetId: NewspaperPresetId;
+  textStyles?: TextRegionStyles;
 }
 
 export interface NewspaperIssue {
