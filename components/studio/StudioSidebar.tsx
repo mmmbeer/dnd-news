@@ -25,8 +25,10 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { bodyFontOptions, headlineFontOptions, mastheadFontOptions } from "@/lib/news/fonts";
 import { categoryLabels } from "@/lib/news/generator";
 import { newspaperPresets } from "@/lib/news/presets";
+import { weatheringLabelForAge } from "@/lib/news/weathering";
 import type {
   GeneratorOptions,
   IssueSettings,
@@ -144,6 +146,7 @@ export function StudioSidebar(props: StudioSidebarProps) {
     onShare,
   } = props;
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const weatheringLabel = weatheringLabelForAge(settings.paperTone);
 
   return (
     <aside className="studio-sidebar" aria-label="Newspaper controls">
@@ -233,23 +236,17 @@ export function StudioSidebar(props: StudioSidebarProps) {
             <div className="three-fields compact-fields">
               <Field id="masthead-font" label="Masthead">
                 <NativeSelect id="masthead-font" value={settings.mastheadFont} onChange={(event) => onSettingsChange("mastheadFont", event.target.value)}>
-                  <NativeSelectOption value="blackletter">Old World</NativeSelectOption>
-                  <NativeSelectOption value="roman">Roman</NativeSelectOption>
-                  <NativeSelectOption value="modern">Modern</NativeSelectOption>
+                  {mastheadFontOptions.map((font) => <NativeSelectOption key={font.id} value={font.id}>{font.label}</NativeSelectOption>)}
                 </NativeSelect>
               </Field>
               <Field id="headline-font" label="Headlines">
                 <NativeSelect id="headline-font" value={settings.headlineFont} onChange={(event) => onSettingsChange("headlineFont", event.target.value)}>
-                  <NativeSelectOption value="classic">Classic</NativeSelectOption>
-                  <NativeSelectOption value="condensed">Condensed</NativeSelectOption>
-                  <NativeSelectOption value="elegant">Elegant</NativeSelectOption>
+                  {headlineFontOptions.map((font) => <NativeSelectOption key={font.id} value={font.id}>{font.label}</NativeSelectOption>)}
                 </NativeSelect>
               </Field>
               <Field id="body-font" label="Body">
                 <NativeSelect id="body-font" value={settings.bodyFont} onChange={(event) => onSettingsChange("bodyFont", event.target.value)}>
-                  <NativeSelectOption value="news">News serif</NativeSelectOption>
-                  <NativeSelectOption value="book">Book serif</NativeSelectOption>
-                  <NativeSelectOption value="clean">Clean sans</NativeSelectOption>
+                  {bodyFontOptions.map((font) => <NativeSelectOption key={font.id} value={font.id}>{font.label}</NativeSelectOption>)}
                 </NativeSelect>
               </Field>
             </div>
@@ -268,6 +265,7 @@ export function StudioSidebar(props: StudioSidebarProps) {
               </div>
             </Field>
             <RangeField label="Paper age" value={settings.paperTone} display={`${settings.paperTone}%`} min={0} max={100} step={1} onChange={(value) => onSettingsChange("paperTone", value)} />
+            <SettingSwitch label="Paper weathering" hint={`${weatheringLabel} · stains, creases and wrinkles follow paper age`} checked={settings.paperWeathering} onCheckedChange={(value) => onSettingsChange("paperWeathering", value)} />
             <SettingSwitch label="Column rules" hint="Separate blocks with hairline rules" checked={settings.showRules} onCheckedChange={(value) => onSettingsChange("showRules", value)} />
             <SettingSwitch label="Justified copy" hint="Square off story columns" checked={settings.justifyText} onCheckedChange={(value) => onSettingsChange("justifyText", value)} />
             <SettingSwitch label="Drop caps" hint="Enlarge the first story letter" checked={settings.showDropCaps} onCheckedChange={(value) => onSettingsChange("showDropCaps", value)} />
