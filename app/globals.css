@@ -1384,9 +1384,11 @@ button:disabled {
   min-height: 1.5em;
 }
 
-.empty-copy-placeholder {
+.newspaper-copy.is-empty[data-placeholder]::before {
+  content: attr(data-placeholder);
   color: #77766f;
   font-style: italic;
+  pointer-events: none;
 }
 
 .story-location {

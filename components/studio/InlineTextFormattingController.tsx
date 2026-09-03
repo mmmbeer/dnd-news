@@ -36,7 +36,6 @@ import type {
 
 interface InlineTextFormattingControllerProps {
   issue: NewspaperIssue;
-  editable: boolean;
   onStoryChange: <K extends keyof NewsStory>(id: string, key: K, value: NewsStory[K]) => void;
   onSettingsChange: <K extends keyof IssueSettings>(key: K, value: IssueSettings[K]) => void;
 }
@@ -124,53 +123,19 @@ function alignmentIcon(alignment: TextAlignment) {
   return <AlignLeft aria-hidden="true" style={iconStyle} />;
 }
 
-function pushRegion(
-  regions: TextRegion[],
-  element: Element | null | undefined,
-  scope: RegionScope,
-  key: string,
-  role: NewspaperFontRole,
-  storyId?: string,
-) {
-  if (element instanceof HTMLElement) regions.push({ element, scope, key, role, storyId });
-}
+function regionFromElement(element: HTMLElement): TextRegion | null {
+  const { textScope, textKey, textRole, storyId } = element.dataset;
+  if ((textScope !== "settings" && textScope !== "story") || !textKey) return null;
+  if (textRole !== "masthead" && textRole !== "headline" && textRole !== "body") return null;
+  if (textScope === "story" && !storyId) return null;
 
-function collectRegions(page: HTMLElement, issue: NewspaperIssue) {
-  const regions: TextRegion[] = [];
-
-  pushRegion(regions, page.querySelector(".newspaper-motto"), "settings", "motto", "body");
-  pushRegion(regions, page.querySelector(".newspaper-header h1"), "settings", "newspaperName", "masthead");
-
-  const folio = page.querySelector<HTMLElement>(".newspaper-folio");
-  if (folio) {
-    const volumeIssue = folio.children.item(0);
-    const volumeIssueValues = volumeIssue?.querySelectorAll(":scope > span");
-    pushRegion(regions, volumeIssueValues?.item(0), "settings", "volume", "body");
-    pushRegion(regions, volumeIssueValues?.item(1), "settings", "issueNumber", "body");
-    pushRegion(regions, folio.children.item(1), "settings", "publicationDate", "body");
-    pushRegion(regions, folio.children.item(2), "settings", "price", "body");
-  }
-
-  const edition = page.querySelector<HTMLElement>(".newspaper-edition");
-  if (edition) {
-    pushRegion(regions, edition.children.item(0), "settings", "dateline", "body");
-    pushRegion(regions, edition.children.item(1), "settings", "edition", "body");
-  }
-
-  const articles = [...page.querySelectorAll<HTMLElement>(".newspaper-story")];
-  articles.forEach((article, index) => {
-    const story = issue.stories[index];
-    if (!story) return;
-    pushRegion(regions, article.querySelector(".story-kicker"), "story", "kicker", "body", story.id);
-    pushRegion(regions, article.querySelector("h2"), "story", "title", "headline", story.id);
-    pushRegion(regions, article.querySelector(".story-dek"), "story", "dek", "headline", story.id);
-    const byline = article.querySelector<HTMLElement>(".story-byline");
-    pushRegion(regions, byline?.querySelector(":scope > span"), "story", "byline", "body", story.id);
-    pushRegion(regions, article.querySelector(".story-location"), "story", "location", "body", story.id);
-    pushRegion(regions, article.querySelector(".newspaper-copy"), "story", "body", "body", story.id);
-  });
-
-  return regions;
+  return {
+    element,
+    scope: textScope,
+    key: textKey,
+    role: textRole,
+    storyId,
+  };
 }
 
 function styleForRegion(issue: NewspaperIssue, region: TextRegion) {
@@ -202,7 +167,6 @@ function updateStyleMap(styles: TextRegionStyles | undefined, key: string, style
 
 export function InlineTextFormattingController({
   issue,
-  editable,
   onStoryChange,
   onSettingsChange,
 }: InlineTextFormattingControllerProps) {
@@ -241,21 +205,6 @@ export function InlineTextFormattingController({
   useEffect(() => {
     const page = pageElement();
     if (!page) return;
-    const frame = window.requestAnimationFrame(() => {
-      collectRegions(page, issue).forEach((region) => applyTextStyle(region.element, styleForRegion(issue, region)));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [issue, pageElement]);
-
-  useEffect(() => {
-    if (!editable) {
-      setActive(null);
-      setPosition(null);
-      return;
-    }
-
-    const page = pageElement();
-    if (!page) return;
 
     const handleFocusIn = (event: FocusEvent) => {
       const target = event.target;
@@ -272,8 +221,7 @@ export function InlineTextFormattingController({
         return;
       }
 
-      const region = collectRegions(page, issue).find((candidate) => candidate.element === editableElement) ?? null;
-      setActive(region);
+      setActive(regionFromElement(editableElement));
     };
 
     const handlePointerDown = (event: PointerEvent) => {
@@ -289,18 +237,19 @@ export function InlineTextFormattingController({
       document.removeEventListener("focusin", handleFocusIn);
       document.removeEventListener("pointerdown", handlePointerDown, true);
     };
-  }, [editable, issue, pageElement]);
+  }, [pageElement]);
 
   useLayoutEffect(() => {
-    if (!active || !editable) return;
-    refreshToolbar();
+    if (!active) return;
+    const frame = window.requestAnimationFrame(refreshToolbar);
     window.addEventListener("resize", refreshToolbar);
     window.addEventListener("scroll", refreshToolbar, true);
     return () => {
+      window.cancelAnimationFrame(frame);
       window.removeEventListener("resize", refreshToolbar);
       window.removeEventListener("scroll", refreshToolbar, true);
     };
-  }, [active, editable, refreshToolbar]);
+  }, [active, refreshToolbar]);
 
   const currentStyle = active ? styleForRegion(issue, active) ?? {} : {};
 
@@ -332,7 +281,7 @@ export function InlineTextFormattingController({
     patchStyle({ textAlign });
   }
 
-  const toolbar = editable && active && position && computedFormat && typeof document !== "undefined"
+  const toolbar = active && position && computedFormat && typeof document !== "undefined"
     ? createPortal(
       <div
         ref={toolbarRef}

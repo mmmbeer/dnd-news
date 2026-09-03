@@ -12,8 +12,9 @@ import Image from "next/image";
 import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
 import { InlineTextFormattingController } from "@/components/studio/InlineTextFormattingController";
 import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverlay";
+import { editableTextHtml, storyBodyHtml } from "@/lib/news/editable-html";
 import { fontFamilyFor } from "@/lib/news/fonts";
-import type { NewsStory, NewspaperIssue, IssueSettings } from "@/lib/news/types";
+import type { NewsStory, NewspaperIssue, IssueSettings, TextRegionStyle } from "@/lib/news/types";
 import { illustrationById } from "@/lib/news/illustrations";
 import { storyBodyColumns, storyColumnSpan } from "@/lib/news/layout";
 import { masonryRowSpan } from "@/lib/news/masonry";
@@ -107,6 +108,8 @@ function EditableText({
   finalized,
   className,
   multiline = false,
+  textStyle,
+  region,
   onChange,
 }: {
   as?: ElementType;
@@ -114,11 +117,23 @@ function EditableText({
   finalized: boolean;
   className?: string;
   multiline?: boolean;
+  textStyle?: TextRegionStyle;
+  region: {
+    scope: "settings" | "story";
+    key: string;
+    role: "masthead" | "headline" | "body";
+    storyId?: string;
+  };
   onChange: (value: string) => void;
 }) {
   return (
     <Component
       className={`${className ?? ""} ${finalized ? "" : "preview-editable"}`.trim()}
+      style={textStyle}
+      data-text-scope={region.scope}
+      data-text-key={region.key}
+      data-text-role={region.role}
+      data-story-id={region.storyId}
       contentEditable={!finalized}
       suppressContentEditableWarning
       spellCheck={!finalized}
@@ -134,9 +149,11 @@ function EditableText({
         const next = multiline ? event.currentTarget.innerText : event.currentTarget.textContent ?? "";
         if (next !== value) onChange(next);
       }}
-    >
-      {value}
-    </Component>
+      // A contentEditable element's DOM belongs to the browser while it is being
+      // edited. Using innerHTML avoids asking React to diff browser-mutated text
+      // nodes when the committed value returns through application state.
+      dangerouslySetInnerHTML={{ __html: editableTextHtml(value) }}
+    />
   );
 }
 
@@ -146,7 +163,12 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
   return (
     <div
       className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${finalized ? "" : "preview-editable"}`.trim()}
-      style={{ columnCount: bodyColumns }}
+      style={{ columnCount: bodyColumns, ...story.textStyles?.body }}
+      data-placeholder={!finalized && isEmpty ? "Click to add story copy" : undefined}
+      data-text-scope="story"
+      data-text-key="body"
+      data-text-role="body"
+      data-story-id={story.id}
       contentEditable={!finalized}
       suppressContentEditableWarning
       spellCheck={!finalized}
@@ -156,12 +178,8 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
         const next = event.currentTarget.innerText.trim();
         if (next !== story.body) onChange(next);
       }}
-    >
-      {story.body.split(/\n\s*\n/).filter(Boolean).map((paragraph, index) => (
-        <p key={`${story.id}-${index}`}>{paragraph}</p>
-      ))}
-      {isEmpty && !finalized && <p className="empty-copy-placeholder">Click to add story copy</p>}
-    </div>
+      dangerouslySetInnerHTML={{ __html: storyBodyHtml(story.body) }}
+    />
   );
 }
 
@@ -381,16 +399,16 @@ export function NewspaperPage({
       }}
     >
       <header className="newspaper-header">
-        <EditableText as="div" value={settings.motto} finalized={finalized} onChange={(value) => onSettingsChange("motto", value)} className="newspaper-motto" />
-        <EditableText as="h1" value={settings.newspaperName} finalized={finalized} onChange={(value) => onSettingsChange("newspaperName", value)} />
+        <EditableText as="div" value={settings.motto} finalized={finalized} onChange={(value) => onSettingsChange("motto", value)} className="newspaper-motto" textStyle={settings.textStyles?.motto} region={{ scope: "settings", key: "motto", role: "body" }} />
+        <EditableText as="h1" value={settings.newspaperName} finalized={finalized} onChange={(value) => onSettingsChange("newspaperName", value)} textStyle={settings.textStyles?.newspaperName} region={{ scope: "settings", key: "newspaperName", role: "masthead" }} />
         <div className="newspaper-folio">
-          <span>Vol. <EditableText value={settings.volume} finalized={finalized} onChange={(value) => onSettingsChange("volume", value)} /> · No. <EditableText value={settings.issueNumber} finalized={finalized} onChange={(value) => onSettingsChange("issueNumber", value)} /></span>
-          <EditableText value={settings.publicationDate} finalized={finalized} onChange={(value) => onSettingsChange("publicationDate", value)} />
-          <EditableText value={settings.price} finalized={finalized} onChange={(value) => onSettingsChange("price", value)} />
+          <span>Vol. <EditableText value={settings.volume} finalized={finalized} onChange={(value) => onSettingsChange("volume", value)} textStyle={settings.textStyles?.volume} region={{ scope: "settings", key: "volume", role: "body" }} /> · No. <EditableText value={settings.issueNumber} finalized={finalized} onChange={(value) => onSettingsChange("issueNumber", value)} textStyle={settings.textStyles?.issueNumber} region={{ scope: "settings", key: "issueNumber", role: "body" }} /></span>
+          <EditableText value={settings.publicationDate} finalized={finalized} onChange={(value) => onSettingsChange("publicationDate", value)} textStyle={settings.textStyles?.publicationDate} region={{ scope: "settings", key: "publicationDate", role: "body" }} />
+          <EditableText value={settings.price} finalized={finalized} onChange={(value) => onSettingsChange("price", value)} textStyle={settings.textStyles?.price} region={{ scope: "settings", key: "price", role: "body" }} />
         </div>
         <div className="newspaper-edition">
-          <EditableText value={settings.dateline} finalized={finalized} onChange={(value) => onSettingsChange("dateline", value)} />
-          <EditableText as="strong" value={settings.edition} finalized={finalized} onChange={(value) => onSettingsChange("edition", value)} />
+          <EditableText value={settings.dateline} finalized={finalized} onChange={(value) => onSettingsChange("dateline", value)} textStyle={settings.textStyles?.dateline} region={{ scope: "settings", key: "dateline", role: "body" }} />
+          <EditableText as="strong" value={settings.edition} finalized={finalized} onChange={(value) => onSettingsChange("edition", value)} textStyle={settings.textStyles?.edition} region={{ scope: "settings", key: "edition", role: "body" }} />
         </div>
       </header>
 
@@ -519,11 +537,11 @@ export function NewspaperPage({
                 </>
               )}
 
-              {story.kicker && <EditableText as="div" value={story.kicker} finalized={finalized} onChange={(value) => onStoryChange(story.id, "kicker", value)} className="story-kicker" />}
-              <EditableText as="h2" value={story.title} finalized={finalized} onChange={(value) => onStoryChange(story.id, "title", value)} />
-              {story.dek && <EditableText as="p" value={story.dek} finalized={finalized} onChange={(value) => onStoryChange(story.id, "dek", value)} className="story-dek" multiline />}
+              {story.kicker && <EditableText as="div" value={story.kicker} finalized={finalized} onChange={(value) => onStoryChange(story.id, "kicker", value)} className="story-kicker" textStyle={story.textStyles?.kicker} region={{ scope: "story", key: "kicker", role: "body", storyId: story.id }} />}
+              <EditableText as="h2" value={story.title} finalized={finalized} onChange={(value) => onStoryChange(story.id, "title", value)} textStyle={story.textStyles?.title} region={{ scope: "story", key: "title", role: "headline", storyId: story.id }} />
+              {story.dek && <EditableText as="p" value={story.dek} finalized={finalized} onChange={(value) => onStoryChange(story.id, "dek", value)} className="story-dek" multiline textStyle={story.textStyles?.dek} region={{ scope: "story", key: "dek", role: "headline", storyId: story.id }} />}
               {story.kind !== "comic" && (
-                <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} /></div>
+                <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} textStyle={story.textStyles?.byline} region={{ scope: "story", key: "byline", role: "body", storyId: story.id }} /></div>
               )}
               {illustration && (
                 <figure
@@ -538,9 +556,9 @@ export function NewspaperPage({
                 </figure>
               )}
               {story.kind === "comic" && story.byline && (
-                <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} /></div>
+                <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} textStyle={story.textStyles?.byline} region={{ scope: "story", key: "byline", role: "body", storyId: story.id }} /></div>
               )}
-              {story.location && story.kind !== "comic" && <EditableText as="span" value={story.location} finalized={finalized} onChange={(value) => onStoryChange(story.id, "location", value.toUpperCase())} className="story-location" />}
+              {story.location && story.kind !== "comic" && <EditableText as="span" value={story.location} finalized={finalized} onChange={(value) => onStoryChange(story.id, "location", value.toUpperCase())} className="story-location" textStyle={story.textStyles?.location} region={{ scope: "story", key: "location", role: "body", storyId: story.id }} />}
               <StoryBody story={story} columns={settings.columns} finalized={finalized} onChange={(value) => onStoryChange(story.id, "body", value)} />
               {story.kind === "lead" && <div className="continued-mark">Continued inside</div>}
             </article>
@@ -552,12 +570,13 @@ export function NewspaperPage({
         <span>Printed under charter of the Free Press Guild</span>
         <span>Late notices accepted until third bell</span>
       </footer>
-      <InlineTextFormattingController
-        issue={issue}
-        editable={!finalized}
-        onStoryChange={onStoryChange}
-        onSettingsChange={onSettingsChange}
-      />
+      {!finalized && (
+        <InlineTextFormattingController
+          issue={issue}
+          onStoryChange={onStoryChange}
+          onSettingsChange={onSettingsChange}
+        />
+      )}
       <PaperWeatheringOverlay paperAge={settings.paperTone} enabled={settings.paperWeathering !== false} seed={issue.seed} />
     </div>
   );

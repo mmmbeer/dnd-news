@@ -72,3 +72,16 @@ test("uses masked raster weathering instead of generated SVG geometry", async ()
   assert.match(source, /mixBlendMode/);
   assert.match(source, /data-weathering-effect/);
 });
+
+test("keeps browser-edited text outside React child reconciliation", async () => {
+  const { editableTextHtml, storyBodyHtml } = await vite.ssrLoadModule("/lib/news/editable-html.ts");
+  const source = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
+  const controller = await readFile(path.join(root, "components/studio/InlineTextFormattingController.tsx"), "utf8");
+
+  assert.equal(editableTextHtml('<New & "Improved">'), "&lt;New &amp; &quot;Improved&quot;&gt;");
+  assert.equal(storyBodyHtml("First <dispatch>.\n\nSecond & final."), "<p>First &lt;dispatch&gt;.</p><p>Second &amp; final.</p>");
+  assert.match(source, /dangerouslySetInnerHTML/);
+  assert.doesNotMatch(source, /empty-copy-placeholder/);
+  assert.doesNotMatch(controller, /collectRegions/);
+  assert.match(controller, /regionFromElement/);
+});
