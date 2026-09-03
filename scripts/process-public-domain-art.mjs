@@ -87,18 +87,25 @@ for (const [index, candidate] of selected.entries()) {
     path.join(rawDirectory, rawFile),
     "-auto-orient",
     "-colorspace", "Gray",
-    "-contrast-stretch", "1%x1%",
-    "-fuzz", "8%",
+    "-contrast-stretch", "0.5%x0.5%",
+    "-background", "white",
+    "-alpha", "remove",
+    "-alpha", "off",
+    "-fuzz", "4%",
     "-trim", "+repage",
     "-resize", "472x472>",
     "-gravity", "center",
     "-background", "white",
     "-extent", "512x512",
-    "-lat", "25x25+4%",
-    "-negate",
-    "-type", "bilevel",
+    "(", "+clone", "-negate", "-level", "5%,85%", ")",
+    "-alpha", "off",
+    "-compose", "CopyOpacity",
+    "-composite",
+    "-fill", "black",
+    "-colorize", "100",
+    "-depth", "8",
     "-strip",
-    path.join(artDirectory, outputFile),
+    `PNG32:${path.join(artDirectory, outputFile)}`,
   ]);
 
   catalog.push({
@@ -117,7 +124,7 @@ for (const [index, candidate] of selected.entries()) {
     license: candidate.license,
     usageTerms: candidate.usageTerms,
     licenseUrl: candidate.licenseUrl || null,
-    transformation: "Square 512×512 crop-safe fit, grayscale normalization, and locally adaptive one-bit line treatment.",
+    transformation: "Source-guided pen-and-ink redraw with simplified composition, tonal grayscale shading, and a transparent paper-ready background.",
   });
 }
 

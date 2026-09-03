@@ -31,5 +31,8 @@ test("ships a provenance-tracked public-domain art pool", async () => {
     assert.deepEqual([...image.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
     assert.equal(image.readUInt32BE(16), 512);
     assert.equal(image.readUInt32BE(20), 512);
+    assert.equal(image[24], 8, `${artwork.id} must preserve 8-bit tonal shading`);
+    assert.ok([4, 6].includes(image[25]), `${artwork.id} must include alpha rather than one-bit grayscale`);
+    assert.match(artwork.transformation, /tonal grayscale shading/);
   }
 });
