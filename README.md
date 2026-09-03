@@ -34,3 +34,14 @@ Connect this repository to Cloudflare Pages with these settings:
 - Build output directory: `dist`
 
 No runtime environment variables or server process are required.
+
+## Cloudflare Workers
+
+The repository can also deploy as an assets-only Cloudflare Worker using
+`wrangler.jsonc`. In Workers Builds, use:
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+
+Do not select the OpenNext preset. This application is exported as static files
+and does not produce an OpenNext standalone server bundle.
