@@ -102,3 +102,18 @@ test("renders sidebar skeletons deterministically", async () => {
   assert.equal(first, second);
   assert.match(first, /--skeleton-width:70%/);
 });
+
+test("serves local newspaper artwork without the unsupported image optimizer", async () => {
+  const checks = [
+    ["components/studio/ImagePickerDialog.tsx", "src={artwork.src}"],
+    ["components/studio/StoryEditorDialog.tsx", "src={artwork.src}"],
+    ["components/studio/NewspaperPage.tsx", "src={illustration.src}"],
+  ];
+
+  for (const [file, sourceExpression] of checks) {
+    const source = await readFile(path.join(root, file), "utf8");
+    const imageTag = source.match(new RegExp(`<Image[^>]*${sourceExpression.replace(/[{}]/g, "\\$&")}[^>]*/>`))?.[0];
+    assert.ok(imageTag, `missing local artwork image in ${file}`);
+    assert.match(imageTag, /\bunoptimized\b/, `${file} would route local artwork through /image`);
+  }
+});

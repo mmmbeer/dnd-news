@@ -33,6 +33,7 @@ import {
   randomNewspaperName,
   seededRandom,
 } from "@/lib/news/generator";
+import { captionForStory } from "@/lib/news/illustrations";
 import { applyNewspaperPreset } from "@/lib/news/presets";
 import type { GeneratorOptions, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
 
@@ -61,6 +62,7 @@ function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
       ...story,
       illustrationId: story.illustrationId ?? null,
       illustrationAlign: story.illustrationAlign ?? (story.kind === "comic" ? "center" : story.kind === "lead" ? "left" : "right"),
+      illustrationCaption: story.illustrationCaption ?? "",
       illustrationScale: story.illustrationScale ?? (story.kind === "comic" ? 100 : story.kind === "lead" ? 28 : story.width === "wide" ? 32 : 44),
     })),
   };
@@ -123,14 +125,23 @@ export default function Home() {
     setIssue((current) => ({ ...current, settings: { ...current.settings, [key]: value } }));
   }
 
-  function updateStory<K extends keyof NewsStory>(key: K, value: NewsStory[K]) {
-    updateStoryById(selectedId, key, value);
-  }
-
   function updateStoryById<K extends keyof NewsStory>(id: string, key: K, value: NewsStory[K]) {
     setIssue((current) => ({
       ...current,
       stories: current.stories.map((story) => story.id === id ? { ...story, [key]: value } : story),
+    }));
+  }
+
+  function applyIllustration(illustrationId: string | null) {
+    setIssue((current) => ({
+      ...current,
+      stories: current.stories.map((story) => story.id === selectedId ? {
+        ...story,
+        illustrationId,
+        illustrationCaption: illustrationId
+          ? captionForStory(illustrationId, story.title, story.location, Math.random)
+          : "",
+      } : story),
     }));
   }
 
@@ -439,7 +450,7 @@ export default function Home() {
             story={selectedStory}
             open
             onOpenChange={setImagePickerOpen}
-            onApply={(illustrationId) => updateStory("illustrationId", illustrationId)}
+            onApply={applyIllustration}
           />
         )}
         <ShareNewspaperDialog

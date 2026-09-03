@@ -82,7 +82,7 @@ export function ImagePickerDialog({ story, open, onOpenChange, onApply }: ImageP
                   onClick={() => setSelectedId(artwork.id)}
                 >
                   <span className="image-library-thumb">
-                    <Image src={artwork.src} alt={artwork.alt} width={180} height={180} />
+                    <Image src={artwork.src} alt={artwork.alt} width={180} height={180} unoptimized />
                     {selected && <span className="image-selected-mark"><Check aria-hidden="true" /></span>}
                   </span>
                   <strong>{artwork.label}</strong>
