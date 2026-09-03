@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, type CSSProperties, type ElementType, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ElementType,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import Image from "next/image";
 import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
 import type { NewsStory, NewspaperIssue, IssueSettings } from "@/lib/news/types";
 import { illustrationById } from "@/lib/news/illustrations";
+import { masonryRowSpan } from "@/lib/news/masonry";
 
 interface NewspaperPageProps {
   issue: NewspaperIssue;
@@ -129,6 +137,49 @@ export function NewspaperPage({
 }: NewspaperPageProps) {
   const { settings } = issue;
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const storyElements = useRef(new Map<string, HTMLElement>());
+  const [storyRows, setStoryRows] = useState<Record<string, number>>({});
+
+  useLayoutEffect(() => {
+    let animationFrame = 0;
+
+    const measureStories = () => {
+      const nextRows: Record<string, number> = {};
+
+      for (const story of issue.stories) {
+        const element = storyElements.current.get(story.id);
+        if (!element) continue;
+
+        const styles = window.getComputedStyle(element);
+        const verticalMargins = Number.parseFloat(styles.marginTop) + Number.parseFloat(styles.marginBottom);
+        nextRows[story.id] = masonryRowSpan(element.offsetHeight + verticalMargins);
+      }
+
+      setStoryRows((currentRows) => {
+        const currentIds = Object.keys(currentRows);
+        const nextIds = Object.keys(nextRows);
+        const unchanged = currentIds.length === nextIds.length
+          && nextIds.every((id) => currentRows[id] === nextRows[id]);
+        return unchanged ? currentRows : nextRows;
+      });
+    };
+
+    const scheduleMeasurement = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(measureStories);
+    };
+
+    measureStories();
+    const observer = new ResizeObserver(scheduleMeasurement);
+    storyElements.current.forEach((element) => observer.observe(element));
+    window.addEventListener("beforeprint", measureStories);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("beforeprint", measureStories);
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [issue.stories, settings]);
   const paperLightness = 97 - settings.paperTone * 0.045;
   const style = {
     "--news-accent": colorThemes[settings.colorTheme],
@@ -223,6 +274,7 @@ export function NewspaperPage({
           const illustrationAlign = story.kind === "comic" ? "center" : story.illustrationAlign ?? "right";
           const storyStyle = {
             gridColumn: `span ${span}`,
+            gridRowEnd: storyRows[story.id] ? `span ${storyRows[story.id]}` : undefined,
             minHeight: story.minHeight ? `${story.minHeight}px` : undefined,
           } as CSSProperties;
           const artStyle = story.illustrationScale ? { "--art-width": `${story.illustrationScale}%` } as CSSProperties : undefined;
@@ -230,6 +282,10 @@ export function NewspaperPage({
           return (
             <article
               key={story.id}
+              ref={(element) => {
+                if (element) storyElements.current.set(story.id, element);
+                else storyElements.current.delete(story.id);
+              }}
               className={`newspaper-story story-${story.kind} story-${story.width} ${!finalized && selectedId === story.id ? "is-selected" : ""}`}
               style={storyStyle}
               onClick={() => !finalized && onSelect(story.id)}

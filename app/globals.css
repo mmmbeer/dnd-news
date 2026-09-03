@@ -482,6 +482,7 @@ button:disabled {
   display: grid;
   align-items: start;
   grid-auto-flow: dense;
+  grid-auto-rows: 2px;
   padding-top: 5px;
 }
 

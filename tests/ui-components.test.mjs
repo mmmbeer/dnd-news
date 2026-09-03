@@ -41,7 +41,17 @@ test("emits the application and print styles", async () => {
   assert.match(css, /\.studio-shell/);
   assert.match(css, /\.newspaper-page/);
   assert.match(css, /scrollbar-width:\s*thin/);
+  assert.match(css, /grid-auto-rows:\s*2px/);
   assert.match(css, /@media print/);
+});
+
+test("converts measured story heights into compact masonry rows", async () => {
+  const { masonryRowSpan } = await vite.ssrLoadModule("/lib/news/masonry.ts");
+
+  assert.equal(masonryRowSpan(1), 1);
+  assert.equal(masonryRowSpan(240), 120);
+  assert.equal(masonryRowSpan(241), 121);
+  assert.equal(masonryRowSpan(0), 1);
 });
 
 test("forwards progress semantics to the primitive", async () => {
