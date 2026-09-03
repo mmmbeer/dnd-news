@@ -89,6 +89,7 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
         {issue.stories.map((story) => {
           const span = storySpan(story, settings.columns);
           const illustration = story.illustrationId ? illustrationById.get(story.illustrationId) : undefined;
+          const illustrationAlign = story.kind === "comic" ? "center" : story.illustrationAlign ?? "right";
           return (
             <article
               key={story.id}
@@ -107,11 +108,11 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
               {story.kind !== "comic" && <div className="story-byline">By {story.byline}</div>}
               {illustration && (
                 <figure
-                  className={`story-art story-art-${illustration.kind}`}
+                  className={`story-art story-art-${illustration.kind} art-align-${illustrationAlign}`}
                   title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
                 >
                   <Image src={illustration.src} alt={illustration.alt} width={512} height={512} />
-                  {illustration.kind === "cartoon" && <figcaption>Editorial cartoon</figcaption>}
+                  <figcaption>{story.kind === "comic" ? "Editorial cartoon" : illustration.alt}</figcaption>
                 </figure>
               )}
               {story.kind === "comic" && story.byline && <div className="story-byline">By {story.byline}</div>}

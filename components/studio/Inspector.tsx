@@ -15,6 +15,7 @@ import { illustrationById, storyIllustrations, type IllustrationKind } from "@/l
 import { newspaperPresets } from "@/lib/news/presets";
 import type {
   GeneratorOptions,
+  IllustrationAlignment,
   IssueSettings,
   NewsStory,
   StoryCategory,
@@ -45,6 +46,7 @@ interface InspectorProps {
   onRollDateline: () => void;
   onRollByline: () => void;
   onRollIllustration: (kind?: IllustrationKind) => void;
+  onIllustrationAlign: (alignment: IllustrationAlignment) => void;
 }
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -112,6 +114,7 @@ export function Inspector(props: InspectorProps) {
     onRollDateline,
     onRollByline,
     onRollIllustration,
+    onIllustrationAlign,
   } = props;
   const selectedIllustration = illustrationById.get(story?.illustrationId ?? "");
 
@@ -183,6 +186,16 @@ export function Inspector(props: InspectorProps) {
                         <strong>{selectedIllustration.label}</strong>
                         <small>{selectedIllustration.creator ? `${selectedIllustration.creator} · ${selectedIllustration.license}` : categoryLabels[selectedIllustration.category]}</small>
                       </span>
+                    </div>
+                  )}
+                  {selectedIllustration && story.kind !== "comic" && (
+                    <div className="art-alignment-control">
+                      <Label>Text flow</Label>
+                      <NativeSelect value={story.illustrationAlign} onChange={(event) => onIllustrationAlign(event.target.value as IllustrationAlignment)}>
+                        <NativeSelectOption value="left">Image left</NativeSelectOption>
+                        <NativeSelectOption value="right">Image right</NativeSelectOption>
+                        <NativeSelectOption value="center">Image centered</NativeSelectOption>
+                      </NativeSelect>
                     </div>
                   )}
                   <div className="art-action-row">

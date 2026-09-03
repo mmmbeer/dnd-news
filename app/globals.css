@@ -559,7 +559,12 @@ button:disabled {
 }
 
 .story-comic .story-art {
+  --art-width: 100%;
+  float: none;
   margin-block: 7px 5px;
+}
+
+.story-comic .story-art img {
   border: 1px solid rgba(30, 30, 27, 0.42);
 }
 
@@ -607,47 +612,60 @@ button:disabled {
 }
 
 .story-art {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  margin: 7px 0 9px;
-  overflow: hidden;
-  border-top: 1px solid rgba(30, 30, 27, 0.32);
-  border-bottom: 1px solid rgba(30, 30, 27, 0.32);
-  background: #fff;
+  --art-width: min(44%, 112px);
+  width: var(--art-width);
+  margin: 4px 0 7px 9px;
+  break-inside: avoid;
+  float: right;
 }
 
 .story-art img {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 1;
   object-fit: contain;
-  mix-blend-mode: multiply;
+  filter: grayscale(1) contrast(1.12);
+  mix-blend-mode: darken;
 }
 
 .story-art figcaption {
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  padding: 2px 4px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #22221f;
-  font-size: 6.5px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  margin-top: 3px;
+  color: #4a4943;
+  font-family: var(--body-font);
+  font-size: 7px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.18;
+  text-align: left;
+  text-transform: none;
+}
+
+.art-align-left {
+  margin-right: 9px;
+  margin-left: 0;
+  float: left;
+}
+
+.art-align-right {
+  margin-right: 0;
+  margin-left: 9px;
+  float: right;
+}
+
+.art-align-center {
+  margin-right: auto;
+  margin-left: auto;
+  float: none;
 }
 
 .story-lead .story-art {
-  float: left;
-  width: min(43%, 340px);
-  margin: 4px 16px 10px 0;
+  --art-width: min(28%, 190px);
 }
 
 .story-wide .story-art {
-  float: left;
-  width: 48%;
-  margin-right: 12px;
+  --art-width: min(32%, 135px);
 }
 
 .newspaper-story::after {
@@ -789,6 +807,19 @@ button:disabled {
 .art-control-preview small {
   color: #858d86;
   font-size: 10px;
+}
+
+.art-alignment-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.art-alignment-control label {
+  color: #aeb2ad;
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .art-action-row {

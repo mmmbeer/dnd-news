@@ -71,13 +71,23 @@ function comicCreator(creator?: string) {
   return creator || "Staff Artist";
 }
 
+function randomIllustrationAlignment(rng: () => number) {
+  const roll = rng();
+  if (roll < 0.46) return "left" as const;
+  if (roll < 0.92) return "right" as const;
+  return "center" as const;
+}
+
 export function generateStory(seed: string, options: GeneratorOptions, index = 0): NewsStory {
   const rng = seededRandom(`${seed}:${index}`);
   const category = resolveCategory(options.category, rng);
   const template = pick(rng, templatesForCategory(category));
   const copy = renderStoryTemplate(template, options.tone, rng);
   const kind = options.length === "brief" && !copy.kind ? "brief" : copy.kind ?? "news";
-  const illustrationId = chance(rng, 0.58) ? copy.illustrationId : randomIllustration(category, rng);
+  const illustrationChance = kind === "brief" || kind === "notice" || kind === "advert" ? 0.05 : 0.12;
+  const illustrationId = chance(rng, illustrationChance)
+    ? (chance(rng, 0.58) ? copy.illustrationId : randomIllustration(category, rng))
+    : null;
   return {
     id: makeId("generated"),
     title: copy.title,
@@ -92,6 +102,7 @@ export function generateStory(seed: string, options: GeneratorOptions, index = 0
     generated: true,
     locked: false,
     illustrationId,
+    illustrationAlign: randomIllustrationAlignment(rng),
   };
 }
 
@@ -117,6 +128,7 @@ export function generateComic(seed: string, index = 0): NewsStory {
     generated: true,
     locked: false,
     illustrationId,
+    illustrationAlign: "center",
   };
 }
 
@@ -140,6 +152,7 @@ export function createBlankStory(): NewsStory {
     generated: false,
     locked: true,
     illustrationId: null,
+    illustrationAlign: "right",
   };
 }
 
@@ -161,6 +174,7 @@ export function createInitialIssue(seed = "blackwater-press"): NewspaperIssue {
     generated: false,
     locked: true,
     illustrationId: "dungeon-stairs",
+    illustrationAlign: "left",
   };
 
   return {

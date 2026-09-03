@@ -8,6 +8,7 @@ export type StoryKind =
   | "comic";
 
 export type StoryWidth = "full" | "wide" | "standard";
+export type IllustrationAlignment = "left" | "right" | "center";
 
 export type StoryCategory =
   | "any"
@@ -43,6 +44,7 @@ export interface NewsStory {
   generated: boolean;
   locked: boolean;
   illustrationId: string | null;
+  illustrationAlign: IllustrationAlignment;
 }
 
 export interface IssueSettings {

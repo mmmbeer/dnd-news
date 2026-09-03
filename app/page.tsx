@@ -34,7 +34,7 @@ import {
   seededRandom,
 } from "@/lib/news/generator";
 import { applyNewspaperPreset } from "@/lib/news/presets";
-import type { GeneratorOptions, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
+import type { GeneratorOptions, IllustrationAlignment, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
 
 const STORAGE_KEY = "broadsheet:issue:v1";
 
@@ -57,7 +57,11 @@ function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
       ...issue.settings,
       presetId: issue.settings.presetId ?? "blackwater",
     },
-    stories: issue.stories.map((story) => ({ ...story, illustrationId: story.illustrationId ?? null })),
+    stories: issue.stories.map((story) => ({
+      ...story,
+      illustrationId: story.illustrationId ?? null,
+      illustrationAlign: story.illustrationAlign ?? (story.kind === "comic" ? "center" : story.kind === "lead" ? "left" : "right"),
+    })),
   };
 }
 
@@ -357,6 +361,7 @@ export default function Home() {
             onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
             onRollByline={() => updateStory("byline", randomByline(generator.tone, rng()))}
             onRollIllustration={randomizeStoryArt}
+            onIllustrationAlign={(alignment: IllustrationAlignment) => updateStory("illustrationAlign", alignment)}
           />
         </div>
 

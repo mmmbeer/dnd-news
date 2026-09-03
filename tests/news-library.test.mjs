@@ -77,6 +77,7 @@ test("generates public-domain cartoons as standalone one-column comics", async (
     assert.equal(comic.width, "standard");
     assert.equal(comic.body, "");
     assert.equal(illustrationById.get(comic.illustrationId)?.kind, "cartoon");
+    assert.equal(comic.illustrationAlign, "center");
   }
 
   const initialIssue = createInitialIssue();
@@ -89,6 +90,18 @@ test("generates public-domain cartoons as standalone one-column comics", async (
 
   for (let index = 0; index < 200; index += 1) {
     const story = generateStory(`story-${index}`, { category: "any", tone: "straight", length: "standard" }, index);
-    assert.notEqual(illustrationById.get(story.illustrationId)?.kind, "cartoon");
+    if (story.illustrationId) assert.notEqual(illustrationById.get(story.illustrationId)?.kind, "cartoon");
   }
+});
+
+test("keeps randomized story art rare and usually aligned with flowing text", async () => {
+  const { generateStory } = await vite.ssrLoadModule("/lib/news/generator.ts");
+  const stories = Array.from({ length: 1_000 }, (_, index) => (
+    generateStory(`rare-art-${index}`, { category: "any", tone: "straight", length: "standard" }, index)
+  ));
+  const illustrated = stories.filter((story) => story.illustrationId);
+  const floated = illustrated.filter((story) => story.illustrationAlign === "left" || story.illustrationAlign === "right");
+
+  assert.ok(illustrated.length >= 70 && illustrated.length <= 150);
+  assert.ok(floated.length / illustrated.length >= 0.85);
 });
