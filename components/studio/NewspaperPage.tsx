@@ -10,6 +10,8 @@ import {
 } from "react";
 import Image from "next/image";
 import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
+import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverlay";
+import { fontFamilyFor } from "@/lib/news/fonts";
 import type { NewsStory, NewspaperIssue, IssueSettings } from "@/lib/news/types";
 import { illustrationById } from "@/lib/news/illustrations";
 import { storyBodyColumns, storyColumnSpan } from "@/lib/news/layout";
@@ -33,24 +35,6 @@ const colorThemes = {
   oxblood: "#721c24",
   navy: "#193451",
   forest: "#214c3a",
-};
-
-const mastheadFonts = {
-  blackletter: "Georgia, 'Times New Roman', serif",
-  roman: "'Palatino Linotype', Palatino, Georgia, serif",
-  modern: "'Arial Narrow', Arial, sans-serif",
-};
-
-const headlineFonts = {
-  classic: "Georgia, 'Times New Roman', serif",
-  condensed: "'Arial Narrow', 'Roboto Condensed', Arial, sans-serif",
-  elegant: "'Palatino Linotype', Palatino, Georgia, serif",
-};
-
-const bodyFonts = {
-  news: "Georgia, 'Times New Roman', serif",
-  book: "'Palatino Linotype', Palatino, Georgia, serif",
-  clean: "Arial, Helvetica, sans-serif",
 };
 
 function EditableText({
@@ -176,11 +160,12 @@ export function NewspaperPage({
   }, [issue.stories, settings, finalized]);
   const paperLightness = 97 - settings.paperTone * 0.045;
   const style = {
+    position: "relative",
     "--news-accent": colorThemes[settings.colorTheme],
     "--news-paper": `hsl(43 38% ${paperLightness}%)`,
-    "--masthead-font": mastheadFonts[settings.mastheadFont as keyof typeof mastheadFonts],
-    "--headline-font": headlineFonts[settings.headlineFont as keyof typeof headlineFonts],
-    "--body-font": bodyFonts[settings.bodyFont as keyof typeof bodyFonts],
+    "--masthead-font": fontFamilyFor("masthead", settings.mastheadFont),
+    "--headline-font": fontFamilyFor("headline", settings.headlineFont),
+    "--body-font": fontFamilyFor("body", settings.bodyFont),
     "--body-size": `${settings.bodySize}px`,
     "--body-leading": settings.lineHeight,
     "--headline-scale": settings.headlineScale,
@@ -356,6 +341,7 @@ export function NewspaperPage({
         <span>Printed under charter of the Free Press Guild</span>
         <span>Late notices accepted until third bell</span>
       </footer>
+      <PaperWeatheringOverlay paperAge={settings.paperTone} enabled={settings.paperWeathering !== false} />
     </div>
   );
 }
