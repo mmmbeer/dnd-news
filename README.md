@@ -53,13 +53,10 @@ The managed Sites deployment provisions the logical `DB` binding declared in
 
 ## Cloudflare Workers
 
-This application now requires a Worker and a D1 database. It can no longer be
-deployed as a static Cloudflare Pages export. For a direct Wrangler deployment,
-add the production D1 database ID to the `DB` binding in `wrangler.jsonc`, then
-run:
+This application now requires a Worker and the D1 database configured as `DB`
+in `wrangler.jsonc`. It can no longer be deployed as a static Cloudflare Pages
+export. For a direct Wrangler deployment, run:
 
 ```bash
-npm run build
-npx wrangler d1 migrations apply DB --remote
-npx wrangler deploy
+npm run deploy
 ```

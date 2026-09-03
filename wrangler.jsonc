@@ -9,6 +9,14 @@
     "directory": "./dist/client",
     "not_found_handling": "none"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dnd-news-snapshots",
+      "database_id": "f3adfd27-a366-4113-a781-3bb9d450d428",
+      "migrations_dir": "drizzle"
+    }
+  ],
   "triggers": {
     "crons": ["17 3 * * *"]
   }
