@@ -162,7 +162,7 @@ export function StoryEditorDialog({
             <div className="inspector-divider"><span>Featured image</span></div>
             {artwork ? (
               <button type="button" className="art-control-preview art-control-button" onClick={() => { onSave(draft); onOpenChange(false); onChooseImage(draft.id); }}>
-                <Image src={artwork.src} alt="" width={116} height={116} />
+                <Image src={artwork.src} alt="" width={116} height={116} unoptimized />
                 <span>
                   <strong>{artwork.label}</strong>
                   <small>{artwork.creator ? `${artwork.creator} · ${artwork.license}` : categoryLabels[artwork.category]}</small>
