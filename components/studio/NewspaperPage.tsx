@@ -337,7 +337,7 @@ export function NewspaperPage({
                   onClick={(event) => { if (!finalized) { event.stopPropagation(); onChooseImage(story.id); } }}
                 >
                   <Image src={illustration.src} alt={illustration.alt} width={512} height={512} />
-                  <figcaption>{story.kind === "comic" ? "Editorial cartoon" : illustration.alt}</figcaption>
+                  <figcaption>{story.illustrationCaption || (story.kind === "comic" ? "Editorial cartoon" : illustration.alt)}</figcaption>
                   {!finalized && <button type="button" className="image-resize-handle" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => startImageResize(event, story)} aria-label="Resize image" title="Drag to resize image" />}
                 </figure>
               )}

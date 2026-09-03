@@ -45,6 +45,7 @@ export interface NewsStory {
   locked: boolean;
   illustrationId: string | null;
   illustrationAlign: IllustrationAlignment;
+  illustrationCaption?: string;
   /** Explicit layout overrides set by the handles in the page editor. */
   columnSpan?: number;
   bodyColumns?: number;

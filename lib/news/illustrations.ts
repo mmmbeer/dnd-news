@@ -114,6 +114,59 @@ export function randomIllustration(
   return candidates[Math.floor(rng() * candidates.length)]?.id ?? storyIllustrations[0].id;
 }
 
+function searchableWords(value: string) {
+  return new Set(value.toLowerCase().match(/[a-z]{4,}/g) ?? []);
+}
+
+function weightedPick<T>(rng: () => number, choices: Array<{ value: T; weight: number }>) {
+  const total = choices.reduce((sum, choice) => sum + choice.weight, 0);
+  let roll = rng() * total;
+  for (const choice of choices) {
+    roll -= choice.weight;
+    if (roll <= 0) return choice.value;
+  }
+  return choices[choices.length - 1].value;
+}
+
+export function randomIllustrationForStory(
+  category: Exclude<StoryCategory, "any">,
+  storyText: string,
+  preferredId: string,
+  rng: () => number = Math.random,
+) {
+  const storyWords = searchableWords(storyText);
+  const candidates = storyIllustrations.filter(
+    (illustration) => illustration.kind !== "cartoon" && illustration.categories.includes(category),
+  );
+  const weighted = candidates.map((illustration) => {
+    const artWords = searchableWords(`${illustration.label} ${illustration.alt}`);
+    const overlap = [...artWords].filter((word) => storyWords.has(word)).length;
+    return {
+      value: illustration.id,
+      weight: 1 + overlap * 5 + (illustration.id === preferredId ? 24 : 0),
+    };
+  });
+  return weighted.length ? weightedPick(rng, weighted) : preferredId;
+}
+
+export function captionForStory(
+  illustrationId: string,
+  headline: string,
+  location: string,
+  rng: () => number = Math.random,
+) {
+  const illustration = illustrationById.get(illustrationId);
+  if (!illustration) return `Press illustration accompanying “${headline}.”`;
+  const subject = illustration.alt.replace(/^(a|an)\s+/i, "").replace(/\.$/, "");
+  const captions = [
+    `${subject}, accompanying reports from ${location}.`,
+    `Press illustration for “${headline}.”`,
+    `${illustration.label}, as described in accounts from ${location}.`,
+    `An artist's impression connected with events reported at ${location}.`,
+  ];
+  return captions[Math.floor(rng() * captions.length)];
+}
+
 export function randomCartoon(rng: () => number = Math.random) {
   return cartoonIllustrations[Math.floor(rng() * cartoonIllustrations.length)]?.id ?? cartoonIllustrations[0]?.id ?? storyIllustrations[0].id;
 }

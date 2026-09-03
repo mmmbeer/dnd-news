@@ -1,130 +1,63 @@
+import { arrangeParagraphs, recipeParagraphs } from "./story-recipes";
 import type { RenderedStoryTemplate, StoryTemplate } from "./story-template";
 import { titleForTone } from "./story-template";
-import type { StoryTone } from "./types";
+import type { StoryLength, StoryTone } from "./types";
+import { firstNames, helperPools, locations, surnames } from "./vocabulary";
 
 export type Rng = () => number;
 
-export const firstNames = [
-  "Aldren", "Anja", "Bramble", "Calder", "Cassia", "Dain", "Delphine", "Edda", "Elian", "Fen",
-  "Garrick", "Hesta", "Ilyra", "Jory", "Kael", "Liora", "Marden", "Mira", "Nim", "Odette",
-  "Orin", "Pella", "Quill", "Rook", "Sabine", "Tamsin", "Ulric", "Vesper", "Wren", "Ysabet",
-];
+const mottoOpeners = [
+  "A Clear Account", "A Faithful Record", "All the News", "At Every Bell", "From Gate to Hall", "From Quay to Crown",
+  "In Service to the Realm", "Ink Before Rumor", "News Before Nightfall", "No Fear, No Favor", "The City Recorded",
+  "The Public Chronicle", "The Realm in Print", "The Record Endures", "The Watchful Press", "Truth Before Torchlight",
+] as const;
+const mottoClosers = [
+  "Each Marketday", "For Every Ward", "For Hearth and Hall", "For the Common Good", "From Dawn to Dusk", "In Unquiet Times",
+  "Set Down in Ink", "Since the First Bell", "Through Storm and Spell", "Under the Public Seal", "Without Fear or Favor",
+  "Worth Knowing", "Written Plainly", "Across the Provinces", "Before the Ink Dries", "For Readers Near and Far",
+] as const;
+const mottos = mottoOpeners.flatMap((opening) => mottoClosers.map((closing) => `${opening} · ${closing}`));
 
-export const surnames = [
-  "Ashdown", "Bellweather", "Blackbriar", "Brassworth", "Candlewick", "Copperhand", "Crowhurst",
-  "Deepwell", "Dusk", "Emberlain", "Fairlock", "Fallow", "Gannet", "Grey", "Hart", "Kestrel",
-  "Morrow", "Nettle", "Pike", "Quarry", "Reed", "Rookwood", "Sable", "Thorne", "Vale", "Vintner",
-  "Wicker", "Wolfe",
-];
-
-export const locations = [
-  "Blackwater", "Brasshaven", "Candlecross", "Dunmarrow", "Eastmere", "Emberwatch", "Fallowgate",
-  "Gloamford", "Greyhaven", "High Bell", "Ironhollow", "Kingsfall", "Mistbridge", "Mournstead",
-  "Northpass", "Old Barrow", "Ravensport", "Red Quarry", "Saint Orra", "Saltmere", "Thornwall",
-  "Westreach", "White Lantern", "Wyrmford",
-];
-
-const regions = [
-  "the Ash March", "the Bracken Coast", "the Crownlands", "the Frostward", "the Green Expanse",
-  "the Iron Vale", "the Low Kingdoms", "the Moonweald", "the Sable Reach", "the Shattered Hills",
-  "the Western Cantons",
-];
-
-const organizations = [
-  "the Alchemists' Compact", "the Bellfounders' Guild", "the Bronze Council", "the Cartographers' Society",
-  "the Chandlers' Union", "the Crown Office", "the Eastgate Watch", "the Ferrymen's League",
-  "the Lantern Court", "the Masons' Chapter", "the Royal Menagerie", "the Salt Consortium",
-  "the Sapphire Collegium", "the Teamsters' Guild", "the Third Archive",
-];
-
-const creatures = [
-  "basilisk", "blink dog", "cockatrice", "displacer beast", "griffon", "hippogriff", "mimic", "owlbear",
-  "pseudodragon", "rust monster", "specter", "troll", "wyvern",
-];
-
-const artifacts = [
-  "an oracular brass key", "a crown of blue glass", "a door with no hinges", "a map that redraws itself",
-  "a moon-silver reliquary", "a singing sword", "a stone egg warm to the touch", "a watch that counts backward",
-  "the missing seal of Saint Vey", "three pages from an impossible atlas",
-];
-
-const goods = [
-  "barley", "blue salt", "candle wax", "dragon pepper", "lamp oil", "oak", "river pearls", "saffron",
-  "spell paper", "tin", "wool", "wyvern leather",
-];
-
-const phenomena = [
-  "green lightning", "a rain of silver minnows", "bells ringing underground", "a second moon at dawn",
-  "fog that whispers names", "warm snow", "shadows pointing north", "stars visible at midday",
-];
-
-const professions = [
-  "apothecary", "armorer", "baker", "barrister", "carter", "chandler", "cooper", "ferryman", "glassblower",
-  "herbalist", "innkeeper", "mason", "scribe", "surveyor", "tanner", "weaver",
-];
-
-const inns = [
-  "the Brass Griffin", "the Crooked Candle", "the Drowned Bell", "the Fox and Flagon", "the Golden Goose",
-  "the Moon & Mortar", "the Queen's Lantern", "the Sleeping Wyvern", "the Three Badgers", "the White Stag",
-];
-
-const streets = [
-  "Abbey Lane", "Bellfounders Row", "Candle Street", "Copper Court", "Dock Road", "Gallows End",
-  "Lantern Walk", "Old King Street", "Saint Vey Square", "Weavers Close",
-];
-
-const temples = [
-  "the Dawn Chapel", "the House of Seven Lamps", "the Moon Basilica", "Saint Orra's Shrine",
-  "the Temple of the Turning Wheel", "the Vigilant Hall",
-];
-
-const colors = ["amber", "black", "blue", "crimson", "emerald", "gold", "ivory", "silver", "violet", "white"];
-const weekdays = ["Moonday", "Towerday", "Windsday", "Godsday", "Fireday", "Starday", "Sunday"];
-const directions = ["north", "south", "east", "west", "upriver", "downriver"];
-const spellSchools = ["abjuration", "conjuration", "divination", "enchantment", "evocation", "illusion", "necromancy", "transmutation"];
-const festivals = ["Founders' Day", "Lantern Night", "Midsummer Fair", "River Blessing", "Saint Orra's Feast", "Wintermarket"];
-
-const helperPools: Record<string, readonly string[]> = {
-  artifact: artifacts,
-  color: colors,
-  creature: creatures,
-  direction: directions,
-  festival: festivals,
-  good: goods,
-  inn: inns,
-  location: locations,
-  organization: organizations,
-  phenomenon: phenomena,
-  profession: professions,
-  region: regions,
-  spellSchool: spellSchools,
-  street: streets,
-  temple: temples,
-  weekday: weekdays,
-};
-
-const mottos = [
-  "Truth Before Torchlight", "All the News Fit for the Realm", "The Realm, Recorded",
-  "An Honest Account of Unquiet Times", "From Gatehouse to Great Hall", "News Without Fear or Favor",
-  "Printed Each Marketday", "The Watchful Voice of the Ward",
-];
 const mastheadPrefixes = [
-  "The Argent", "The Brass", "The Crown", "The Daily", "The Emberwatch", "The Free", "The Grand",
-  "The Lantern", "The Northward", "The Royal", "The Seven Bells", "The Silver", "The Wandering", "The Westreach",
-];
+  "The Argent", "The Blackwater", "The Brass", "The Crown", "The Daily", "The Emberwatch", "The Free", "The Grand",
+  "The Iron", "The Lantern", "The Northward", "The Provincial", "The Royal", "The Seven Bells", "The Silver",
+  "The Wandering", "The Watchful", "The Westreach", "The White", "The Wyrmford",
+] as const;
 const mastheadSuffixes = [
-  "Broadsheet", "Chronicle", "Clarion", "Courier", "Gazette", "Herald", "Ledger", "Post", "Register",
-  "Sentinel", "Standard", "Times", "Trumpet",
-];
-const titlesByTone: Record<StoryTone, string[]> = {
-  straight: ["Correspondent", "Desk Reporter", "Staff Writer", "Civic Editor"],
-  sensational: ["Special Investigator", "Night Editor", "Eye-Witness Reporter"],
-  gossipy: ["Society Correspondent", "Your Faithful Observer", "Court Whisperer"],
-  ominous: ["Special Correspondent", "Watch Desk", "Reporter at Large"],
+  "Broadsheet", "Chronicle", "Clarion", "Courier", "Dispatch", "Gazette", "Herald", "Journal", "Ledger", "Post",
+  "Register", "Sentinel", "Standard", "Times", "Tribune", "Trumpet",
+] as const;
+
+const titlesByTone: Record<StoryTone, readonly string[]> = {
+  straight: [
+    "City Correspondent", "Civic Editor", "Court Reporter", "Desk Reporter", "District Reporter", "Guild Correspondent",
+    "Markets Editor", "Morning Reporter", "Provincial Correspondent", "Quayside Reporter", "Road Correspondent", "Staff Writer",
+  ],
+  sensational: [
+    "Breaking News Editor", "Chief Investigator", "Eye-Witness Reporter", "Late Edition Correspondent", "Night Editor",
+    "Pressroom Investigator", "Special Investigator", "Torchlight Correspondent", "Watch-House Reporter", "Weekend Investigator",
+  ],
+  gossipy: [
+    "Assembly Rooms Correspondent", "Court Observer", "Court Whisperer", "Fashionable Intelligence Editor", "Palace Correspondent",
+    "Salon Observer", "Society Correspondent", "Supper Desk", "Theatre Correspondent", "Your Faithful Observer",
+  ],
+  ominous: [
+    "After-Dark Correspondent", "Archive Investigator", "Night Watch Desk", "Reporter at Large", "Special Correspondent",
+    "Twilight Desk", "Unusual Affairs Editor", "Watch Desk", "Weather Eye", "West Gate Correspondent",
+  ],
 };
+
+const eras = [
+  "Age of Embers", "Common Era", "Dragonfall Reckoning", "King's Calendar", "Revised Crown Calendar", "Third Compact",
+  "Year of the Crown", "Years Since the Concord",
+] as const;
+const months = [
+  "Deepfrost", "Frostwane", "Rainmoot", "Greengrowth", "Bloomtide", "Highsun", "Midsummer", "Reaping",
+  "Harvestwane", "Leafturn", "Longnight", "Emberend",
+] as const;
 
 export function pick<T>(rng: Rng, values: readonly T[]) {
-  return values[Math.floor(rng() * values.length)];
+  return values[Math.min(values.length - 1, Math.floor(rng() * values.length))];
 }
 
 export function chance(rng: Rng, threshold = 0.5) {
@@ -142,6 +75,7 @@ function pluralize(value: string) {
 }
 
 function withArticle(value: string) {
+  if (/^(a|an|the)\s/i.test(value)) return value;
   return `${/^[aeiou]/i.test(value) ? "an" : "a"} ${value}`;
 }
 
@@ -154,50 +88,84 @@ function applyModifier(value: string, modifier?: string) {
   return value;
 }
 
-function resolveToken(token: string, rng: Rng) {
-  const [expression, ...modifiers] = token.split("|");
+function helperName(expression: string) {
+  return expression.split(":", 1)[0].replace(/\d+$/, "");
+}
+
+function valueAlreadyUsed(helper: string, value: string, values: ReadonlyMap<string, string>) {
+  return [...values.entries()].some(([key, existing]) => helperName(key) === helper && existing === value);
+}
+
+function drawUnique(helper: string, pool: readonly string[], rng: Rng, values: ReadonlyMap<string, string>) {
+  let value = pick(rng, pool);
+  for (let attempt = 0; attempt < 24 && valueAlreadyUsed(helper, value, values); attempt += 1) value = pick(rng, pool);
+  return valueAlreadyUsed(helper, value, values)
+    ? pool.find((candidate) => !valueAlreadyUsed(helper, candidate, values)) ?? value
+    : value;
+}
+
+function resolveToken(expression: string, rng: Rng, values: ReadonlyMap<string, string>) {
   const [helperWithIndex, argument] = expression.split(":", 2);
   const helper = helperWithIndex.replace(/\d+$/, "");
-  let value: string;
-  if (helper === "person") value = randomPerson(rng);
-  else if (helper === "number") {
+  if (helper === "person") return drawUnique(helper, people, rng, values);
+  if (helper === "number") {
     const [minimum, maximum] = (argument ?? "1-20").split("-").map(Number);
-    value = String(minimum + Math.floor(rng() * (maximum - minimum + 1)));
-  } else if (helper === "choice") value = pick(rng, (argument ?? "one/two").split("/"));
-  else if (helper === "bell") {
+    return String(minimum + Math.floor(rng() * (maximum - minimum + 1)));
+  }
+  if (helper === "choice") return pick(rng, (argument ?? "one/two").split("/"));
+  if (helper === "bell") {
     const bell = 1 + Math.floor(rng() * 12);
     const suffix = bell === 1 ? "st" : bell === 2 ? "nd" : bell === 3 ? "rd" : "th";
-    value = `${bell}${suffix} bell`;
+    return `${bell}${suffix} bell`;
   }
-  else if (helper === "gold") value = `${10 + Math.floor(rng() * 241)} gold crowns`;
-  else if (helper === "silver") value = `${2 + Math.floor(rng() * 19)} silver pieces`;
-  else if (helper === "percent") value = `${5 + Math.floor(rng() * 36)} percent`;
-  else if (helper === "distance") value = `${2 + Math.floor(rng() * 29)} miles`;
-  else value = pick(rng, helperPools[helper] ?? [helper]);
-  return modifiers.reduce((current, modifier) => applyModifier(current, modifier), value);
+  if (helper === "gold") return `${10 + Math.floor(rng() * 491)} gold crowns`;
+  if (helper === "silver") return `${2 + Math.floor(rng() * 39)} silver pieces`;
+  if (helper === "percent") return `${5 + Math.floor(rng() * 46)} percent`;
+  if (helper === "distance") return `${2 + Math.floor(rng() * 59)} miles`;
+  const pool = helperPools[helper as keyof typeof helperPools];
+  return pool ? drawUnique(helper, pool, rng, values) : helper;
 }
+
+export const people = firstNames.flatMap((firstName) => surnames.map((surname) => `${firstName} ${surname}`));
 
 export function renderText(source: string, rng: Rng, values = new Map<string, string>()) {
-  return source.replace(/\{\{([^{}]+)\}\}/g, (_match, token: string) => {
-    if (!values.has(token)) values.set(token, resolveToken(token, rng));
-    return values.get(token) ?? token;
+  const rendered = source.replace(/\{\{([^{}]+)\}\}/g, (_match, token: string) => {
+    const [expression, ...modifiers] = token.split("|");
+    if (!values.has(expression)) values.set(expression, resolveToken(expression, rng, values));
+    return modifiers.reduce((current, modifier) => applyModifier(current, modifier), values.get(expression) ?? expression);
   });
+  return rendered.replace(/(^|[.!?]\s+)(the)\b/g, "$1The");
 }
 
-export function renderStoryTemplate(template: StoryTemplate, tone: StoryTone, rng: Rng): RenderedStoryTemplate {
+export function renderStoryTemplate(
+  template: StoryTemplate,
+  tone: StoryTone,
+  rng: Rng,
+  length: StoryLength = "standard",
+): RenderedStoryTemplate {
   const values = new Map<string, string>();
+  const title = renderText(titleForTone(template, tone), rng, values);
+  const kicker = renderText(template.kicker, rng, values);
+  const dek = renderText(template.dek, rng, values);
+  const baseParagraphs = template.paragraphs.map((paragraph) => renderText(paragraph, rng, values));
+  const extras = recipeParagraphs(template.category, tone, rng).map((paragraph) => renderText(paragraph, rng, values));
+  const primaryLocation = values.get("location") ?? drawUnique("location", locations, rng, values);
+  values.set("location", primaryLocation);
+
   return {
-    title: renderText(titleForTone(template, tone), rng, values),
-    kicker: renderText(template.kicker, rng, values),
-    dek: renderText(template.dek, rng, values),
-    paragraphs: template.paragraphs.map((paragraph) => renderText(paragraph, rng, values)),
+    title,
+    kicker,
+    dek,
+    paragraphs: arrangeParagraphs(baseParagraphs, extras, length, rng),
     illustrationId: template.illustrationId,
     kind: template.kind,
+    facts: Object.fromEntries(values),
+    primaryLocation,
   };
 }
 
 export function randomPerson(rng: Rng = Math.random) {
-  return `${pick(rng, firstNames)} ${pick(rng, surnames)}`;
+  return pick(rng, people);
 }
 
 export function randomLocation(rng: Rng = Math.random) {
@@ -217,7 +185,5 @@ export function randomByline(tone: StoryTone = "straight", rng: Rng = Math.rando
 }
 
 export function randomDate(rng: Rng = Math.random) {
-  const eras = ["Year of the Crown", "Dragonfall Reckoning", "Common Era", "Age of Embers"];
-  const months = ["Deepfrost", "Rainmoot", "Greengrowth", "Highsun", "Harvestwane", "Longnight"];
   return `${1 + Math.floor(rng() * 28)} ${pick(rng, months)}, ${112 + Math.floor(rng() * 888)} ${pick(rng, eras)}`;
 }

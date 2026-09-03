@@ -21,6 +21,8 @@ export interface RenderedStoryTemplate {
   paragraphs: string[];
   illustrationId: string;
   kind?: StoryKind;
+  facts: Readonly<Record<string, string>>;
+  primaryLocation: string;
 }
 
 export function titleForTone(template: StoryTemplate, tone: StoryTone) {

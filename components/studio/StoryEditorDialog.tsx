@@ -173,19 +173,28 @@ export function StoryEditorDialog({
               <button type="button" className="empty-art-button" onClick={() => { onSave(draft); onOpenChange(false); onChooseImage(draft.id); }}><ImageIcon /> Choose an image</button>
             )}
             {artwork && draft.kind !== "comic" && (
-              <div className="two-fields">
-                <Field id="story-image-flow" label="Text flow">
-                  <NativeSelect id="story-image-flow" value={draft.illustrationAlign} onChange={(event) => change("illustrationAlign", event.target.value as IllustrationAlignment)}>
-                    <NativeSelectOption value="left">Image left</NativeSelectOption>
-                    <NativeSelectOption value="right">Image right</NativeSelectOption>
-                    <NativeSelectOption value="center">Image centered</NativeSelectOption>
-                  </NativeSelect>
+              <>
+                <Field id="story-image-caption" label="Image caption">
+                  <Input
+                    id="story-image-caption"
+                    value={draft.illustrationCaption ?? ""}
+                    onChange={(event) => change("illustrationCaption", event.target.value)}
+                  />
                 </Field>
-                <div className="range-field">
-                  <div className="range-label"><Label>Image size</Label><span>{draft.illustrationScale ?? 44}%</span></div>
-                  <Slider value={[draft.illustrationScale ?? 44]} min={20} max={100} step={2} onValueChange={(next) => change("illustrationScale", next[0])} />
+                <div className="two-fields">
+                  <Field id="story-image-flow" label="Text flow">
+                    <NativeSelect id="story-image-flow" value={draft.illustrationAlign} onChange={(event) => change("illustrationAlign", event.target.value as IllustrationAlignment)}>
+                      <NativeSelectOption value="left">Image left</NativeSelectOption>
+                      <NativeSelectOption value="right">Image right</NativeSelectOption>
+                      <NativeSelectOption value="center">Image centered</NativeSelectOption>
+                    </NativeSelect>
+                  </Field>
+                  <div className="range-field">
+                    <div className="range-label"><Label>Image size</Label><span>{draft.illustrationScale ?? 44}%</span></div>
+                    <Slider value={[draft.illustrationScale ?? 44]} min={20} max={100} step={2} onValueChange={(next) => change("illustrationScale", next[0])} />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 

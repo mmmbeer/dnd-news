@@ -18,6 +18,7 @@ const storySchema = z.object({
   locked: z.boolean(),
   illustrationId: z.string().max(160).nullable(),
   illustrationAlign: z.enum(["left", "right", "center"]),
+  illustrationCaption: z.string().max(1_000).optional(),
   columnSpan: z.number().int().min(1).max(5).optional(),
   bodyColumns: z.number().int().min(1).max(5).optional(),
   minHeight: z.number().finite().min(0).max(10_000).optional(),

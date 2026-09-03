@@ -1,4 +1,11 @@
-import { illustrationById, randomCartoon, randomIllustration, type IllustrationKind } from "./illustrations";
+import {
+  captionForStory,
+  illustrationById,
+  randomCartoon,
+  randomIllustration,
+  randomIllustrationForStory,
+  type IllustrationKind,
+} from "./illustrations";
 import { getNewspaperPreset } from "./presets";
 import {
   chance,
@@ -11,12 +18,12 @@ import {
   renderStoryTemplate,
 } from "./template-engine";
 import { storyTemplates, templatesForCategory } from "./templates";
+import type { StoryTemplate } from "./story-template";
 import type {
   GeneratorOptions,
   NewsStory,
   NewspaperIssue,
   StoryCategory,
-  StoryLength,
 } from "./types";
 
 function hashSeed(value: string) {
@@ -51,11 +58,6 @@ function resolveCategory(category: StoryCategory, rng: () => number) {
   return category === "any" ? pick(rng, categories) : category;
 }
 
-function paragraphsFor(length: StoryLength, paragraphs: string[]) {
-  const count = length === "brief" ? 1 : length === "standard" ? 2 : 3;
-  return paragraphs.slice(0, count).join("\n\n");
-}
-
 const comicTitles = [
   "The Week in Ink",
   "From the Editorial Desk",
@@ -78,15 +80,25 @@ function randomIllustrationAlignment(rng: () => number) {
   return "center" as const;
 }
 
-export function generateStory(seed: string, options: GeneratorOptions, index = 0): NewsStory {
+function generateStoryFromTemplate(
+  seed: string,
+  options: GeneratorOptions,
+  index: number,
+  selectedTemplate?: StoryTemplate,
+): NewsStory {
   const rng = seededRandom(`${seed}:${index}`);
   const category = resolveCategory(options.category, rng);
-  const template = pick(rng, templatesForCategory(category));
-  const copy = renderStoryTemplate(template, options.tone, rng);
+  const template = selectedTemplate ?? pick(rng, templatesForCategory(category));
+  const copy = renderStoryTemplate(template, options.tone, rng, options.length);
   const kind = options.length === "brief" && !copy.kind ? "brief" : copy.kind ?? "news";
   const illustrationChance = kind === "brief" || kind === "notice" || kind === "advert" ? 0.05 : 0.12;
   const illustrationId = chance(rng, illustrationChance)
-    ? (chance(rng, 0.58) ? copy.illustrationId : randomIllustration(category, rng))
+    ? randomIllustrationForStory(
+      category,
+      [copy.title, copy.dek, ...copy.paragraphs].join(" "),
+      copy.illustrationId,
+      rng,
+    )
     : null;
   return {
     id: makeId("generated"),
@@ -94,8 +106,8 @@ export function generateStory(seed: string, options: GeneratorOptions, index = 0
     kicker: copy.kicker,
     dek: copy.dek,
     byline: randomByline(options.tone, rng),
-    location: randomLocation(rng).toUpperCase(),
-    body: paragraphsFor(options.length, copy.paragraphs),
+    location: copy.primaryLocation.toUpperCase(),
+    body: copy.paragraphs.join("\n\n"),
     kind,
     width: kind === "brief" || kind === "notice" || kind === "advert" ? "standard" : chance(rng, 0.24) ? "wide" : "standard",
     category,
@@ -103,11 +115,26 @@ export function generateStory(seed: string, options: GeneratorOptions, index = 0
     locked: false,
     illustrationId,
     illustrationAlign: randomIllustrationAlignment(rng),
+    illustrationCaption: illustrationId
+      ? captionForStory(illustrationId, copy.title, copy.primaryLocation, rng)
+      : undefined,
   };
 }
 
+export function generateStory(seed: string, options: GeneratorOptions, index = 0): NewsStory {
+  return generateStoryFromTemplate(seed, options, index);
+}
+
 export function generateStories(seed: string, count: number, options: GeneratorOptions) {
-  return Array.from({ length: count }, (_, index) => generateStory(seed, options, index));
+  const usedTemplates = new Set<string>();
+  return Array.from({ length: count }, (_, index) => {
+    const rng = seededRandom(`${seed}:${index}`);
+    const category = resolveCategory(options.category, rng);
+    const available = templatesForCategory(category).filter((template) => !usedTemplates.has(template.id));
+    const template = pick(rng, available.length ? available : templatesForCategory(category));
+    usedTemplates.add(template.id);
+    return generateStoryFromTemplate(seed, options, index, template);
+  });
 }
 
 export function generateComic(seed: string, index = 0): NewsStory {
@@ -129,6 +156,7 @@ export function generateComic(seed: string, index = 0): NewsStory {
     locked: false,
     illustrationId,
     illustrationAlign: "center",
+    illustrationCaption: "Editorial cartoon",
   };
 }
 
@@ -153,6 +181,7 @@ export function createBlankStory(): NewsStory {
     locked: true,
     illustrationId: null,
     illustrationAlign: "right",
+    illustrationCaption: "",
   };
 }
 
@@ -175,6 +204,7 @@ export function createInitialIssue(seed = "blackwater-press"): NewspaperIssue {
     locked: true,
     illustrationId: "dungeon-stairs",
     illustrationAlign: "left",
+    illustrationCaption: "The drowned chapel steps beneath Blackwater, from an artist's reconstruction.",
   };
 
   return {
