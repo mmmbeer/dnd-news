@@ -42,6 +42,14 @@ const worker = {
 
     return handler.fetch(request, env, ctx);
   },
+
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      env.DB.prepare("DELETE FROM newspaper_snapshots WHERE expires_at <= ?")
+        .bind(Date.now())
+        .run(),
+    );
+  },
 };
 
 export default worker;
