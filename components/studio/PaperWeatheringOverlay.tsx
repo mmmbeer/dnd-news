@@ -1,4 +1,18 @@
-import { weatheringOverlayForAge } from "@/lib/news/weathering";
+import Image from "next/image";
+import {
+  paperWeatheringRasters,
+  weatheringOverlayForAge,
+  type PaperWeatheringRaster,
+} from "@/lib/news/weathering";
+
+function seedFromString(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
 
 function seededRandom(seed: number) {
   let value = seed >>> 0;
@@ -15,107 +29,90 @@ function between(rng: () => number, min: number, max: number) {
   return min + rng() * (max - min);
 }
 
-export function PaperWeatheringOverlay({ paperAge, enabled }: { paperAge: number; enabled: boolean }) {
+function shuffled<T>(values: T[], rng: () => number) {
+  const result = [...values];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rng() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
+function selectRasters(level: number, count: number, rng: () => number) {
+  const marks = shuffled(paperWeatheringRasters.filter((asset) => asset.kind === "mark"), rng);
+  const textures = shuffled(paperWeatheringRasters.filter((asset) => asset.kind === "texture"), rng);
+  const textureCount = Math.min(Math.floor(level / 7), 3, count - 1);
+  return shuffled([...marks.slice(0, count - textureCount), ...textures.slice(0, textureCount)], rng);
+}
+
+function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: number, rng: () => number) {
+  const intensity = level / 25;
+  const isTexture = asset.kind === "texture";
+  const width = isTexture ? between(rng, 58, 112) : between(rng, 13, 39 + intensity * 8);
+  const edgeRange = isTexture ? 12 : 4;
+  const x = between(rng, -edgeRange, 100 + edgeRange);
+  const y = between(rng, -edgeRange, 100 + edgeRange);
+  const rotation = between(rng, isTexture ? -12 : -175, isTexture ? 12 : 175);
+  const flip = rng() > 0.5 ? -1 : 1;
+  const feather = isTexture
+    ? "radial-gradient(ellipse 78% 76% at center, #000 46%, rgba(0,0,0,.94) 63%, transparent 100%)"
+    : "radial-gradient(ellipse 72% 70% at center, #000 48%, rgba(0,0,0,.9) 68%, transparent 100%)";
+
+  return {
+    position: "absolute" as const,
+    left: `${x}%`,
+    top: `${y}%`,
+    width: `${width}%`,
+    aspectRatio: asset.aspectRatio,
+    transform: `translate(-50%, -50%) rotate(${rotation.toFixed(2)}deg) scaleX(${flip})`,
+    transformOrigin: "center",
+    opacity: Math.min(1, asset.baseOpacity * opacity * between(rng, 0.72, 1.18)),
+    mixBlendMode: asset.blendMode,
+    maskImage: feather,
+    WebkitMaskImage: feather,
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
+  };
+}
+
+export function PaperWeatheringOverlay({ paperAge, enabled, seed }: { paperAge: number; enabled: boolean; seed: string }) {
   const overlay = weatheringOverlayForAge(paperAge);
   if (!enabled || !overlay) return null;
 
-  const rng = seededRandom(overlay.level * 7919 + 173);
-  const intensity = overlay.level / 25;
-
-  const stains = Array.from({ length: overlay.stainCount }, (_, index) => {
-    const cx = between(rng, 90, 910);
-    const cy = between(rng, 90, 1160);
-    const rx = between(rng, 48, 115) * (0.7 + intensity * 0.65);
-    const ry = rx * between(rng, 0.62, 1.28);
-    const rotation = between(rng, -24, 24);
-    const strokeOpacity = 0.055 + intensity * 0.055;
-    return (
-      <g key={`stain-${index}`} transform={`rotate(${rotation} ${cx} ${cy})`}>
-        <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#765d35" fillOpacity={0.008 + intensity * 0.014} stroke="#6f5634" strokeOpacity={strokeOpacity} strokeWidth={between(rng, 2.4, 6.2)} />
-        <ellipse cx={cx + between(rng, -6, 6)} cy={cy + between(rng, -6, 6)} rx={rx * 0.82} ry={ry * 0.83} fill="none" stroke="#8a7045" strokeOpacity={strokeOpacity * 0.55} strokeWidth={between(rng, 1, 3)} />
-      </g>
-    );
-  });
-
-  const creases = Array.from({ length: overlay.creaseCount }, (_, index) => {
-    const vertical = rng() > 0.42;
-    const x1 = vertical ? between(rng, 110, 890) : between(rng, 20, 110);
-    const y1 = vertical ? between(rng, 15, 170) : between(rng, 120, 1130);
-    const x2 = vertical ? x1 + between(rng, -70, 70) : between(rng, 890, 980);
-    const y2 = vertical ? between(rng, 1080, 1235) : y1 + between(rng, -80, 80);
-    const cx1 = between(rng, 240, 760);
-    const cy1 = between(rng, 260, 990);
-    const cx2 = between(rng, 240, 760);
-    const cy2 = between(rng, 260, 990);
-    const path = `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${cx1.toFixed(1)} ${cy1.toFixed(1)}, ${cx2.toFixed(1)} ${cy2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-    return (
-      <g key={`crease-${index}`}>
-        <path d={path} fill="none" stroke="#564934" strokeOpacity={0.04 + intensity * 0.055} strokeWidth={between(rng, 1.4, 3.2)} />
-        <path d={path} fill="none" stroke="#fff7de" strokeOpacity={0.025 + intensity * 0.025} strokeWidth={between(rng, 0.6, 1.4)} transform={`translate(${between(rng, 1, 3)} ${between(rng, 1, 3)})`} />
-      </g>
-    );
-  });
-
-  const wrinkles = Array.from({ length: overlay.wrinkleCount }, (_, index) => {
-    const x1 = between(rng, 20, 980);
-    const y1 = between(rng, 20, 1230);
-    const length = between(rng, 90, 330);
-    const x2 = Math.max(12, Math.min(988, x1 + between(rng, -length, length)));
-    const y2 = Math.max(12, Math.min(1238, y1 + between(rng, -length * 0.42, length * 0.42)));
-    const mx = (x1 + x2) / 2 + between(rng, -55, 55);
-    const my = (y1 + y2) / 2 + between(rng, -55, 55);
-    return (
-      <path
-        key={`wrinkle-${index}`}
-        d={`M ${x1.toFixed(1)} ${y1.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`}
-        fill="none"
-        stroke="#62523b"
-        strokeOpacity={0.018 + intensity * 0.035}
-        strokeWidth={between(rng, 0.55, 1.45)}
-      />
-    );
-  });
-
-  const speckles = Array.from({ length: overlay.speckleCount }, (_, index) => {
-    const radius = between(rng, 0.7, 4.2) * (0.75 + intensity * 0.45);
-    return (
-      <ellipse
-        key={`speck-${index}`}
-        cx={between(rng, 10, 990)}
-        cy={between(rng, 10, 1240)}
-        rx={radius * between(rng, 0.6, 1.5)}
-        ry={radius}
-        fill="#5c4930"
-        fillOpacity={between(rng, 0.018, 0.055) * (0.75 + intensity)}
-      />
-    );
-  });
+  const rng = seededRandom(seedFromString(`${seed}:weathering:${overlay.level}`));
+  const rasters = selectRasters(overlay.level, overlay.elementCount, rng);
 
   return (
-    <svg
+    <div
       className="paper-weathering-overlay"
       data-weathering-overlay={overlay.id}
-      viewBox="0 0 1000 1250"
-      preserveAspectRatio="none"
       aria-hidden="true"
       style={{
         position: "absolute",
         inset: 0,
-        width: "100%",
-        height: "100%",
+        overflow: "hidden",
         pointerEvents: "none",
         zIndex: 6,
-        mixBlendMode: "multiply",
-        opacity: overlay.opacity,
       }}
     >
-      <rect x="5" y="5" width="990" height="1240" fill="none" stroke="#57462f" strokeOpacity={0.035 + intensity * 0.07} strokeWidth={4 + overlay.edgeWear * 9} />
-      <path d="M 8 22 C 180 2 310 34 480 9 S 790 31 992 12" fill="none" stroke="#594730" strokeOpacity={0.025 + intensity * 0.05} strokeWidth={3 + overlay.edgeWear * 5} />
-      <path d="M 12 1238 C 180 1215 340 1248 515 1226 S 805 1247 990 1224" fill="none" stroke="#594730" strokeOpacity={0.025 + intensity * 0.05} strokeWidth={3 + overlay.edgeWear * 5} />
-      {stains}
-      {creases}
-      {wrinkles}
-      {speckles}
-    </svg>
+      {rasters.map((asset, index) => (
+        <span
+          key={`${asset.id}-${index}`}
+          data-weathering-effect={asset.id}
+          data-weathering-kind={asset.kind}
+          style={effectStyle(asset, overlay.level, overlay.opacity, rng)}
+        >
+          <Image
+            src={asset.src}
+            alt=""
+            fill
+            sizes={asset.kind === "texture" ? "100vw" : "40vw"}
+            style={{ objectFit: "contain" }}
+            draggable={false}
+            unoptimized
+          />
+        </span>
+      ))}
+    </div>
   );
 }

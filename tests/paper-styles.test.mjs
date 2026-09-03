@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { access, readFile } from "node:fs/promises";
 import test, { after } from "node:test";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 
@@ -34,8 +36,9 @@ test("exposes expanded masthead, headline and body font families", async () => {
 });
 
 test("maps paper age monotonically across 25 weathering overlays", async () => {
-  const { paperWeatheringOverlays, weatheringLevelForAge, weatheringOverlayForAge } = await vite.ssrLoadModule("/lib/news/weathering.ts");
+  const { paperWeatheringOverlays, paperWeatheringRasters, weatheringLevelForAge, weatheringOverlayForAge } = await vite.ssrLoadModule("/lib/news/weathering.ts");
   assert.equal(paperWeatheringOverlays.length, 25);
+  assert.equal(paperWeatheringRasters.length, 20);
   assert.equal(weatheringLevelForAge(0), 0);
   assert.equal(weatheringLevelForAge(1), 1);
   assert.equal(weatheringLevelForAge(4), 1);
@@ -49,4 +52,23 @@ test("maps paper age monotonically across 25 weathering overlays", async () => {
     assert.ok(current >= previous, `weathering level regressed at paper age ${age}`);
     previous = current;
   }
+
+  let previousCount = 0;
+  for (const overlay of paperWeatheringOverlays) {
+    assert.ok(overlay.elementCount >= previousCount, `weathering element count regressed at level ${overlay.level}`);
+    previousCount = overlay.elementCount;
+  }
+
+  for (const raster of paperWeatheringRasters) {
+    assert.match(raster.src, /^\/weathering\/[a-z0-9-]+\.webp$/);
+    await access(path.join(root, "public", raster.src));
+  }
+});
+
+test("uses masked raster weathering instead of generated SVG geometry", async () => {
+  const source = await readFile(path.join(root, "components/studio/PaperWeatheringOverlay.tsx"), "utf8");
+  assert.doesNotMatch(source, /<(?:svg|ellipse|path|circle|line)\b/);
+  assert.match(source, /maskImage/);
+  assert.match(source, /mixBlendMode/);
+  assert.match(source, /data-weathering-effect/);
 });

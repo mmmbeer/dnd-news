@@ -409,6 +409,7 @@ button:disabled {
   min-height: 1230px;
   margin: 0 auto;
   padding: 42px 46px 32px;
+  isolation: isolate;
   background:
     linear-gradient(90deg, rgba(74, 61, 39, 0.025), transparent 14%, transparent 86%, rgba(74, 61, 39, 0.025)),
     var(--news-paper);

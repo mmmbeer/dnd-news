@@ -100,7 +100,7 @@ export const newspaperPresets: NewspaperPreset[] = [
       presetId: "mercantile", newspaperName: "The Mercantile Register", motto: "Markets Open. Ledgers Balanced. News Delivered.",
       dateline: "Exchange Square & the Merchant Roads", edition: "Opening Bell Edition", price: "2 Copper", columns: 5,
       pageSize: "broadsheet", mastheadFont: "baskerville", headlineFont: "condensed", bodyFont: "schoolbook", bodySize: 9,
-      lineHeight: 1.22, headlineScale: 0.88, colorTheme: "forest", paperTone: 16, paperWeathering: true, showRules: true,
+      lineHeight: 1.22, headlineScale: 0.88, colorTheme: "forest", paperTone: 16, paperWeathering: true, showRules: false,
       justifyText: true, showDropCaps: false,
     },
   },

@@ -18,11 +18,11 @@ after(async () => {
   await vite.close();
 });
 
-test("ships five distinct newspaper defaults", async () => {
+test("ships ten distinct newspaper defaults", async () => {
   const { newspaperPresets } = await vite.ssrLoadModule("/lib/news/presets.ts");
-  assert.equal(newspaperPresets.length, 5);
-  assert.equal(new Set(newspaperPresets.map((preset) => preset.id)).size, 5);
-  assert.equal(new Set(newspaperPresets.map((preset) => preset.settings.newspaperName)).size, 5);
+  assert.equal(newspaperPresets.length, 10);
+  assert.equal(new Set(newspaperPresets.map((preset) => preset.id)).size, 10);
+  assert.equal(new Set(newspaperPresets.map((preset) => preset.settings.newspaperName)).size, 10);
   assert.ok(newspaperPresets.every((preset) => !preset.settings.showRules));
 });
 

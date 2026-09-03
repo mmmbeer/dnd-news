@@ -558,7 +558,7 @@ export function NewspaperPage({
         onStoryChange={onStoryChange}
         onSettingsChange={onSettingsChange}
       />
-      <PaperWeatheringOverlay paperAge={settings.paperTone} enabled={settings.paperWeathering !== false} />
+      <PaperWeatheringOverlay paperAge={settings.paperTone} enabled={settings.paperWeathering !== false} seed={issue.seed} />
     </div>
   );
 }
