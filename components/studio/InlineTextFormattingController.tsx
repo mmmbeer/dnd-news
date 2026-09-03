@@ -10,6 +10,17 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Italic,
+  Minus,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
+import {
   bodyFontOptions,
   headlineFontOptions,
   mastheadFontOptions,
@@ -94,10 +105,23 @@ const buttonBaseStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+const iconStyle: CSSProperties = {
+  width: 11,
+  height: 11,
+  strokeWidth: 1.8,
+};
+
 function toolbarButtonStyle(active = false): CSSProperties {
   return active
     ? { ...buttonBaseStyle, background: "rgba(85, 54, 47, 0.16)", color: "#6d2f28" }
     : buttonBaseStyle;
+}
+
+function alignmentIcon(alignment: TextAlignment) {
+  if (alignment === "center") return <AlignCenter aria-hidden="true" style={iconStyle} />;
+  if (alignment === "right") return <AlignRight aria-hidden="true" style={iconStyle} />;
+  if (alignment === "justify") return <AlignJustify aria-hidden="true" style={iconStyle} />;
+  return <AlignLeft aria-hidden="true" style={iconStyle} />;
 }
 
 function pushRegion(
@@ -340,12 +364,20 @@ export function InlineTextFormattingController({
           ))}
         </select>
         <span aria-hidden="true" style={{ width: 1, height: 12, margin: "0 1px", background: "rgba(32,31,27,0.18)" }} />
-        <button type="button" title="Decrease font size" aria-label="Decrease font size" style={toolbarButtonStyle()} onMouseDown={(event) => event.preventDefault()} onClick={() => changeFontSize(-1)}>−</button>
+        <button type="button" title="Decrease font size" aria-label="Decrease font size" style={toolbarButtonStyle()} onMouseDown={(event) => event.preventDefault()} onClick={() => changeFontSize(-1)}>
+          <Minus aria-hidden="true" style={iconStyle} />
+        </button>
         <span title="Font size" style={{ minWidth: 20, textAlign: "center", fontVariantNumeric: "tabular-nums", fontSize: 8 }}>{Math.round(computedFormat.fontSize)}</span>
-        <button type="button" title="Increase font size" aria-label="Increase font size" style={toolbarButtonStyle()} onMouseDown={(event) => event.preventDefault()} onClick={() => changeFontSize(1)}>+</button>
+        <button type="button" title="Increase font size" aria-label="Increase font size" style={toolbarButtonStyle()} onMouseDown={(event) => event.preventDefault()} onClick={() => changeFontSize(1)}>
+          <Plus aria-hidden="true" style={iconStyle} />
+        </button>
         <span aria-hidden="true" style={{ width: 1, height: 12, margin: "0 1px", background: "rgba(32,31,27,0.18)" }} />
-        <button type="button" title="Bold" aria-label="Bold" aria-pressed={computedFormat.bold} style={toolbarButtonStyle(computedFormat.bold)} onMouseDown={(event) => event.preventDefault()} onClick={() => patchStyle({ fontWeight: computedFormat.bold ? 400 : 700 })}>B</button>
-        <button type="button" title="Italic" aria-label="Italic" aria-pressed={computedFormat.italic} style={{ ...toolbarButtonStyle(computedFormat.italic), fontStyle: "italic" }} onMouseDown={(event) => event.preventDefault()} onClick={() => patchStyle({ fontStyle: computedFormat.italic ? "normal" : "italic" })}>I</button>
+        <button type="button" title="Bold" aria-label="Bold" aria-pressed={computedFormat.bold} style={toolbarButtonStyle(computedFormat.bold)} onMouseDown={(event) => event.preventDefault()} onClick={() => patchStyle({ fontWeight: computedFormat.bold ? 400 : 700 })}>
+          <Bold aria-hidden="true" style={iconStyle} />
+        </button>
+        <button type="button" title="Italic" aria-label="Italic" aria-pressed={computedFormat.italic} style={toolbarButtonStyle(computedFormat.italic)} onMouseDown={(event) => event.preventDefault()} onClick={() => patchStyle({ fontStyle: computedFormat.italic ? "normal" : "italic" })}>
+          <Italic aria-hidden="true" style={iconStyle} />
+        </button>
         <span aria-hidden="true" style={{ width: 1, height: 12, margin: "0 1px", background: "rgba(32,31,27,0.18)" }} />
         {(["left", "center", "right", "justify"] as TextAlignment[]).map((alignment) => (
           <button
@@ -358,11 +390,13 @@ export function InlineTextFormattingController({
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => setAlignment(alignment)}
           >
-            {alignment === "justify" ? "J" : alignment[0].toUpperCase()}
+            {alignmentIcon(alignment)}
           </button>
         ))}
         <span aria-hidden="true" style={{ width: 1, height: 12, margin: "0 1px", background: "rgba(32,31,27,0.18)" }} />
-        <button type="button" title="Reset formatting" aria-label="Reset formatting" style={toolbarButtonStyle()} onMouseDown={(event) => event.preventDefault()} onClick={() => replaceStyle({})}>×</button>
+        <button type="button" title="Reset formatting" aria-label="Reset formatting" style={toolbarButtonStyle()} onMouseDown={(event) => event.preventDefault()} onClick={() => replaceStyle({})}>
+          <RotateCcw aria-hidden="true" style={iconStyle} />
+        </button>
       </div>,
       document.body,
     )
