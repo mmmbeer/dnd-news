@@ -47,6 +47,7 @@ export interface NewsStory {
   illustrationAlign: IllustrationAlignment;
   /** Explicit layout overrides set by the handles in the page editor. */
   columnSpan?: number;
+  bodyColumns?: number;
   minHeight?: number;
   illustrationScale?: number;
 }

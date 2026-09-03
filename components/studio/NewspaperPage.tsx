@@ -12,6 +12,7 @@ import Image from "next/image";
 import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
 import type { NewsStory, NewspaperIssue, IssueSettings } from "@/lib/news/types";
 import { illustrationById } from "@/lib/news/illustrations";
+import { storyBodyColumns, storyColumnSpan } from "@/lib/news/layout";
 import { masonryRowSpan } from "@/lib/news/masonry";
 
 interface NewspaperPageProps {
@@ -51,13 +52,6 @@ const bodyFonts = {
   book: "'Palatino Linotype', Palatino, Georgia, serif",
   clean: "Arial, Helvetica, sans-serif",
 };
-
-function storySpan(story: NewsStory, columns: number) {
-  if (story.columnSpan) return Math.max(1, Math.min(story.columnSpan, columns));
-  if (story.kind === "lead" || story.width === "full") return columns;
-  if (story.width === "wide") return Math.min(2, columns);
-  return 1;
-}
 
 function EditableText({
   as: Component = "span",
@@ -99,11 +93,11 @@ function EditableText({
 }
 
 function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; columns: number; finalized: boolean; onChange: (value: string) => void }) {
-  if (!story.body.trim() && finalized) return null;
-  const bodyColumns = story.kind === "lead" ? Math.min(columns, 3) : 1;
+  const isEmpty = !story.body.trim();
+  const bodyColumns = storyBodyColumns(story, columns);
   return (
     <div
-      className={`newspaper-copy ${finalized ? "" : "preview-editable"}`.trim()}
+      className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${finalized ? "" : "preview-editable"}`.trim()}
       style={{ columnCount: bodyColumns }}
       contentEditable={!finalized}
       suppressContentEditableWarning
@@ -118,7 +112,7 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
       {story.body.split(/\n\s*\n/).filter(Boolean).map((paragraph, index) => (
         <p key={`${story.id}-${index}`}>{paragraph}</p>
       ))}
-      {!story.body.trim() && !finalized && <p className="empty-copy-placeholder">Click to add story copy</p>}
+      {isEmpty && !finalized && <p className="empty-copy-placeholder">Click to add story copy</p>}
     </div>
   );
 }
@@ -179,7 +173,7 @@ export function NewspaperPage({
       window.removeEventListener("beforeprint", measureStories);
       window.cancelAnimationFrame(animationFrame);
     };
-  }, [issue.stories, settings]);
+  }, [issue.stories, settings, finalized]);
   const paperLightness = 97 - settings.paperTone * 0.045;
   const style = {
     "--news-accent": colorThemes[settings.colorTheme],
@@ -201,7 +195,7 @@ export function NewspaperPage({
     if (!article || !grid) return;
     const startX = event.clientX;
     const startY = event.clientY;
-    const startSpan = storySpan(story, settings.columns);
+    const startSpan = storyColumnSpan(story, settings.columns);
     const startHeight = article.getBoundingClientRect().height;
     const columnWidth = grid.getBoundingClientRect().width / settings.columns;
 
@@ -210,6 +204,7 @@ export function NewspaperPage({
         const span = Math.max(1, Math.min(settings.columns, Math.round(startSpan + (moveEvent.clientX - startX) / columnWidth)));
         onStoryChange(story.id, "columnSpan", span);
         onStoryChange(story.id, "width", span === 1 ? "standard" : span === settings.columns ? "full" : "wide");
+        if (story.bodyColumns && story.bodyColumns > span) onStoryChange(story.id, "bodyColumns", span);
       } else {
         onStoryChange(story.id, "minHeight", Math.max(90, Math.round(startHeight + moveEvent.clientY - startY)));
       }
@@ -269,7 +264,7 @@ export function NewspaperPage({
 
       <main className="newspaper-grid" style={{ gridTemplateColumns: `repeat(${settings.columns}, minmax(0, 1fr))` }}>
         {issue.stories.map((story, index) => {
-          const span = storySpan(story, settings.columns);
+          const span = storyColumnSpan(story, settings.columns);
           const illustration = story.illustrationId ? illustrationById.get(story.illustrationId) : undefined;
           const illustrationAlign = story.kind === "comic" ? "center" : story.illustrationAlign ?? "right";
           const storyStyle = {

@@ -23,6 +23,7 @@ test("ships five distinct newspaper defaults", async () => {
   assert.equal(newspaperPresets.length, 5);
   assert.equal(new Set(newspaperPresets.map((preset) => preset.id)).size, 5);
   assert.equal(new Set(newspaperPresets.map((preset) => preset.settings.newspaperName)).size, 5);
+  assert.ok(newspaperPresets.every((preset) => !preset.settings.showRules));
 });
 
 test("ships at least one hundred resolvable story templates", async () => {

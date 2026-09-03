@@ -54,6 +54,17 @@ test("converts measured story heights into compact masonry rows", async () => {
   assert.equal(masonryRowSpan(0), 1);
 });
 
+test("adapts lead copy columns to its story span and accepts overrides", async () => {
+  const { storyBodyColumns, storyColumnSpan } = await vite.ssrLoadModule("/lib/news/layout.ts");
+  const lead = { kind: "lead", width: "full" };
+
+  assert.equal(storyColumnSpan(lead, 5), 5);
+  assert.equal(storyBodyColumns(lead, 5), 3);
+  assert.equal(storyBodyColumns({ ...lead, columnSpan: 2 }, 5), 2);
+  assert.equal(storyBodyColumns({ ...lead, columnSpan: 2, bodyColumns: 1 }, 5), 1);
+  assert.equal(storyBodyColumns({ ...lead, columnSpan: 2, bodyColumns: 4 }, 5), 2);
+});
+
 test("forwards progress semantics to the primitive", async () => {
   const { Progress } = await vite.ssrLoadModule("/components/ui/progress.tsx");
   const html = renderToStaticMarkup(React.createElement(Progress, { value: 37 }));

@@ -400,6 +400,7 @@ export default function Home() {
             onDuplicate={duplicateStory}
             onReroll={rerollStory}
             onChooseImage={openImagePicker}
+            pageColumns={issue.settings.columns}
           />
         )}
         {imagePickerOpen && (

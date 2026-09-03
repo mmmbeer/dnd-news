@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { categoryLabels } from "@/lib/news/generator";
 import { illustrationById } from "@/lib/news/illustrations";
+import { storyColumnSpan } from "@/lib/news/layout";
 import type {
   IllustrationAlignment,
   NewsStory,
@@ -38,6 +39,7 @@ interface StoryEditorDialogProps {
   onDuplicate: (id: string) => void;
   onReroll: (id: string) => void;
   onChooseImage: (id: string) => void;
+  pageColumns: number;
 }
 
 function Field({ id, label, children, hint }: { id?: string; label: string; children: React.ReactNode; hint?: string }) {
@@ -59,12 +61,14 @@ export function StoryEditorDialog({
   onDuplicate,
   onReroll,
   onChooseImage,
+  pageColumns,
 }: StoryEditorDialogProps) {
   const [draft, setDraft] = useState<NewsStory | undefined>(story);
 
   if (!draft) return null;
   const artwork = illustrationById.get(draft.illustrationId ?? "");
   const wordCount = draft.body.trim().split(/\s+/).filter(Boolean).length;
+  const availableBodyColumns = storyColumnSpan(draft, pageColumns);
 
   function change<K extends keyof NewsStory>(key: K, value: NewsStory[K]) {
     setDraft((current) => current ? { ...current, [key]: value } : current);
@@ -100,7 +104,7 @@ export function StoryEditorDialog({
             <Input id="story-byline" value={draft.byline} onChange={(event) => change("byline", event.target.value)} />
           </Field>
 
-          <div className="three-fields">
+          <div className={draft.kind === "comic" ? "three-fields" : "four-fields"}>
             <Field id="story-format" label="Format">
               <NativeSelect id="story-format" value={draft.kind} onChange={(event) => change("kind", event.target.value as StoryKind)}>
                 <NativeSelectOption value="lead">Lead</NativeSelectOption>
@@ -119,6 +123,7 @@ export function StoryEditorDialog({
                 onChange={(event) => {
                   change("width", event.target.value as StoryWidth);
                   change("columnSpan", undefined);
+                  change("bodyColumns", undefined);
                 }}
               >
                 <NativeSelectOption value="standard">1 column</NativeSelectOption>
@@ -126,6 +131,20 @@ export function StoryEditorDialog({
                 <NativeSelectOption value="full">Full width</NativeSelectOption>
               </NativeSelect>
             </Field>
+            {draft.kind !== "comic" && (
+              <Field id="story-body-columns" label="Text columns" hint="Automatic follows the story width">
+                <NativeSelect
+                  id="story-body-columns"
+                  value={draft.bodyColumns ? String(draft.bodyColumns) : "auto"}
+                  onChange={(event) => change("bodyColumns", event.target.value === "auto" ? undefined : Number(event.target.value))}
+                >
+                  <NativeSelectOption value="auto">Automatic</NativeSelectOption>
+                  {Array.from({ length: availableBodyColumns }, (_, index) => index + 1).map((column) => (
+                    <NativeSelectOption key={column} value={column}>{column}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
             <Field id="story-section" label="Section">
               <NativeSelect id="story-section" value={draft.category} onChange={(event) => change("category", event.target.value as Exclude<StoryCategory, "any">)}>
                 {Object.entries(categoryLabels).filter(([key]) => key !== "any").map(([key, label]) => (
