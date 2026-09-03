@@ -28,7 +28,17 @@ export type StoryTone = "straight" | "sensational" | "gossipy" | "ominous";
 export type StoryLength = "brief" | "standard" | "long";
 export type ColorTheme = "charcoal" | "oxblood" | "navy" | "forest";
 export type PageSize = "broadsheet" | "tabloid" | "letter";
-export type NewspaperPresetId = "blackwater" | "crown-city" | "lantern" | "greenway" | "adventurer";
+export type NewspaperPresetId =
+  | "blackwater"
+  | "crown-city"
+  | "lantern"
+  | "greenway"
+  | "adventurer"
+  | "silver-quill"
+  | "watchman"
+  | "mercantile"
+  | "arcane-herald"
+  | "frontier";
 
 export interface NewsStory {
   id: string;
@@ -72,6 +82,7 @@ export interface IssueSettings {
   headlineScale: number;
   colorTheme: ColorTheme;
   paperTone: number;
+  paperWeathering: boolean;
   showRules: boolean;
   justifyText: boolean;
   showDropCaps: boolean;
