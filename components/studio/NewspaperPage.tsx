@@ -1,14 +1,22 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties, type ElementType, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
-import type { NewsStory, NewspaperIssue } from "@/lib/news/types";
+import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
+import type { NewsStory, NewspaperIssue, IssueSettings } from "@/lib/news/types";
 import { illustrationById } from "@/lib/news/illustrations";
 
 interface NewspaperPageProps {
   issue: NewspaperIssue;
   selectedId: string;
+  finalized: boolean;
   onSelect: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onMove: (from: number, to: number) => void;
+  onChooseImage: (id: string) => void;
+  onStoryChange: <K extends keyof NewsStory>(id: string, key: K, value: NewsStory[K]) => void;
+  onSettingsChange: <K extends keyof IssueSettings>(key: K, value: IssueSettings[K]) => void;
 }
 
 const colorThemes = {
@@ -37,25 +45,90 @@ const bodyFonts = {
 };
 
 function storySpan(story: NewsStory, columns: number) {
+  if (story.columnSpan) return Math.max(1, Math.min(story.columnSpan, columns));
   if (story.kind === "lead" || story.width === "full") return columns;
   if (story.width === "wide") return Math.min(2, columns);
   return 1;
 }
 
-function StoryBody({ story, columns }: { story: NewsStory; columns: number }) {
-  if (!story.body.trim()) return null;
+function EditableText({
+  as: Component = "span",
+  value,
+  finalized,
+  className,
+  multiline = false,
+  onChange,
+}: {
+  as?: ElementType;
+  value: string;
+  finalized: boolean;
+  className?: string;
+  multiline?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Component
+      className={`${className ?? ""} ${finalized ? "" : "preview-editable"}`.trim()}
+      contentEditable={!finalized}
+      suppressContentEditableWarning
+      spellCheck={!finalized}
+      onClick={(event: React.MouseEvent) => event.stopPropagation()}
+      onKeyDown={(event: React.KeyboardEvent<HTMLElement>) => {
+        event.stopPropagation();
+        if (!multiline && event.key === "Enter") {
+          event.preventDefault();
+          event.currentTarget.blur();
+        }
+      }}
+      onBlur={(event: React.FocusEvent<HTMLElement>) => {
+        const next = multiline ? event.currentTarget.innerText : event.currentTarget.textContent ?? "";
+        if (next !== value) onChange(next);
+      }}
+    >
+      {value}
+    </Component>
+  );
+}
+
+function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; columns: number; finalized: boolean; onChange: (value: string) => void }) {
+  if (!story.body.trim() && finalized) return null;
   const bodyColumns = story.kind === "lead" ? Math.min(columns, 3) : 1;
   return (
-    <div className="newspaper-copy" style={{ columnCount: bodyColumns }}>
+    <div
+      className={`newspaper-copy ${finalized ? "" : "preview-editable"}`.trim()}
+      style={{ columnCount: bodyColumns }}
+      contentEditable={!finalized}
+      suppressContentEditableWarning
+      spellCheck={!finalized}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+      onBlur={(event) => {
+        const next = event.currentTarget.innerText.trim();
+        if (next !== story.body) onChange(next);
+      }}
+    >
       {story.body.split(/\n\s*\n/).filter(Boolean).map((paragraph, index) => (
         <p key={`${story.id}-${index}`}>{paragraph}</p>
       ))}
+      {!story.body.trim() && !finalized && <p className="empty-copy-placeholder">Click to add story copy</p>}
     </div>
   );
 }
 
-export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProps) {
+export function NewspaperPage({
+  issue,
+  selectedId,
+  finalized,
+  onSelect,
+  onEdit,
+  onDelete,
+  onMove,
+  onChooseImage,
+  onStoryChange,
+  onSettingsChange,
+}: NewspaperPageProps) {
   const { settings } = issue;
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const paperLightness = 97 - settings.paperTone * 0.045;
   const style = {
     "--news-accent": colorThemes[settings.colorTheme],
@@ -69,54 +142,159 @@ export function NewspaperPage({ issue, selectedId, onSelect }: NewspaperPageProp
     "--story-columns": settings.columns,
   } as CSSProperties;
 
+  function startStoryResize(event: ReactPointerEvent<HTMLButtonElement>, story: NewsStory, axis: "horizontal" | "vertical") {
+    event.preventDefault();
+    event.stopPropagation();
+    const article = event.currentTarget.closest("article");
+    const grid = event.currentTarget.closest(".newspaper-grid");
+    if (!article || !grid) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startSpan = storySpan(story, settings.columns);
+    const startHeight = article.getBoundingClientRect().height;
+    const columnWidth = grid.getBoundingClientRect().width / settings.columns;
+
+    function handlePointerMove(moveEvent: PointerEvent) {
+      if (axis === "horizontal") {
+        const span = Math.max(1, Math.min(settings.columns, Math.round(startSpan + (moveEvent.clientX - startX) / columnWidth)));
+        onStoryChange(story.id, "columnSpan", span);
+        onStoryChange(story.id, "width", span === 1 ? "standard" : span === settings.columns ? "full" : "wide");
+      } else {
+        onStoryChange(story.id, "minHeight", Math.max(90, Math.round(startHeight + moveEvent.clientY - startY)));
+      }
+    }
+
+    function stopResize() {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", stopResize);
+      document.body.classList.remove("is-resizing-layout");
+    }
+
+    document.body.classList.add("is-resizing-layout");
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", stopResize, { once: true });
+  }
+
+  function startImageResize(event: ReactPointerEvent<HTMLButtonElement>, story: NewsStory) {
+    event.preventDefault();
+    event.stopPropagation();
+    const article = event.currentTarget.closest("article");
+    if (!article) return;
+    const startX = event.clientX;
+    const startScale = story.illustrationScale ?? (story.kind === "lead" ? 28 : story.width === "wide" ? 32 : 44);
+    const articleWidth = article.getBoundingClientRect().width;
+
+    function handlePointerMove(moveEvent: PointerEvent) {
+      const scale = Math.max(20, Math.min(100, Math.round(startScale + ((moveEvent.clientX - startX) / articleWidth) * 100)));
+      onStoryChange(story.id, "illustrationScale", scale);
+    }
+
+    function stopResize() {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", stopResize);
+      document.body.classList.remove("is-resizing-layout");
+    }
+
+    document.body.classList.add("is-resizing-layout");
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", stopResize, { once: true });
+  }
+
   return (
-    <div className={`newspaper-page page-${settings.pageSize} ${settings.showRules ? "with-rules" : ""} ${settings.justifyText ? "is-justified" : ""} ${settings.showDropCaps ? "with-dropcaps" : ""}`} style={style}>
+    <div className={`newspaper-page page-${settings.pageSize} ${settings.showRules ? "with-rules" : ""} ${settings.justifyText ? "is-justified" : ""} ${settings.showDropCaps ? "with-dropcaps" : ""} ${finalized ? "is-finalized" : "is-editing"}`} style={style}>
       <header className="newspaper-header">
-        <div className="newspaper-motto">{settings.motto}</div>
-        <h1>{settings.newspaperName}</h1>
+        <EditableText as="div" value={settings.motto} finalized={finalized} onChange={(value) => onSettingsChange("motto", value)} className="newspaper-motto" />
+        <EditableText as="h1" value={settings.newspaperName} finalized={finalized} onChange={(value) => onSettingsChange("newspaperName", value)} />
         <div className="newspaper-folio">
-          <span>Vol. {settings.volume} · No. {settings.issueNumber}</span>
-          <span>{settings.publicationDate}</span>
-          <span>{settings.price}</span>
+          <span>Vol. <EditableText value={settings.volume} finalized={finalized} onChange={(value) => onSettingsChange("volume", value)} /> · No. <EditableText value={settings.issueNumber} finalized={finalized} onChange={(value) => onSettingsChange("issueNumber", value)} /></span>
+          <EditableText value={settings.publicationDate} finalized={finalized} onChange={(value) => onSettingsChange("publicationDate", value)} />
+          <EditableText value={settings.price} finalized={finalized} onChange={(value) => onSettingsChange("price", value)} />
         </div>
         <div className="newspaper-edition">
-          <span>{settings.dateline}</span>
-          <strong>{settings.edition}</strong>
+          <EditableText value={settings.dateline} finalized={finalized} onChange={(value) => onSettingsChange("dateline", value)} />
+          <EditableText as="strong" value={settings.edition} finalized={finalized} onChange={(value) => onSettingsChange("edition", value)} />
         </div>
       </header>
 
       <main className="newspaper-grid" style={{ gridTemplateColumns: `repeat(${settings.columns}, minmax(0, 1fr))` }}>
-        {issue.stories.map((story) => {
+        {issue.stories.map((story, index) => {
           const span = storySpan(story, settings.columns);
           const illustration = story.illustrationId ? illustrationById.get(story.illustrationId) : undefined;
           const illustrationAlign = story.kind === "comic" ? "center" : story.illustrationAlign ?? "right";
+          const storyStyle = {
+            gridColumn: `span ${span}`,
+            minHeight: story.minHeight ? `${story.minHeight}px` : undefined,
+          } as CSSProperties;
+          const artStyle = story.illustrationScale ? { "--art-width": `${story.illustrationScale}%` } as CSSProperties : undefined;
+
           return (
             <article
               key={story.id}
-              className={`newspaper-story story-${story.kind} story-${story.width} ${selectedId === story.id ? "is-selected" : ""}`}
-              style={{ gridColumn: `span ${span}` }}
-              onClick={() => onSelect(story.id)}
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") onSelect(story.id);
+              className={`newspaper-story story-${story.kind} story-${story.width} ${!finalized && selectedId === story.id ? "is-selected" : ""}`}
+              style={storyStyle}
+              onClick={() => !finalized && onSelect(story.id)}
+              onFocusCapture={() => !finalized && onSelect(story.id)}
+              onDragOver={(event) => { if (!finalized) event.preventDefault(); }}
+              onDrop={() => {
+                if (!finalized && draggedIndex !== null && draggedIndex !== index) onMove(draggedIndex, index);
+                setDraggedIndex(null);
               }}
-              aria-label={`Edit story: ${story.title}`}
+              tabIndex={finalized ? undefined : 0}
+              onKeyDown={(event) => {
+                if (!finalized && (event.key === "Enter" || event.key === " ")) onSelect(story.id);
+              }}
+              aria-label={finalized ? undefined : `Edit story: ${story.title}`}
             >
-              {story.kicker && <div className="story-kicker">{story.kicker}</div>}
-              <h2>{story.title}</h2>
-              {story.dek && <p className="story-dek">{story.dek}</p>}
-              {story.kind !== "comic" && <div className="story-byline">By {story.byline}</div>}
+              {!finalized && (
+                <>
+                  <span
+                    className="story-drag-handle"
+                    role="button"
+                    tabIndex={0}
+                    draggable
+                    title="Drag to reorder story"
+                    aria-label={`Drag to reorder ${story.title}`}
+                    onClick={(event) => event.stopPropagation()}
+                    onDragStart={(event) => {
+                      setDraggedIndex(index);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.stopPropagation();
+                    }}
+                    onDragEnd={() => setDraggedIndex(null)}
+                  ><Grip aria-hidden="true" /></span>
+                  <span className="story-preview-tools">
+                    <button type="button" onClick={(event) => { event.stopPropagation(); onChooseImage(story.id); }} aria-label={illustration ? "Change image" : "Add image"} title={illustration ? "Change image" : "Add image"}><ImageIcon /></button>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); onEdit(story.id); }} aria-label="Edit story" title="Edit story"><Edit3 /></button>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); onDelete(story.id); }} aria-label="Remove story" title="Remove story"><Trash2 /></button>
+                  </span>
+                  <button type="button" className="story-resize-handle resize-horizontal" onPointerDown={(event) => startStoryResize(event, story, "horizontal")} aria-label="Resize story column span" title="Drag to change column span" />
+                  <button type="button" className="story-resize-handle resize-vertical" onPointerDown={(event) => startStoryResize(event, story, "vertical")} aria-label="Resize story height" title="Drag to change story height" />
+                </>
+              )}
+
+              {story.kicker && <EditableText as="div" value={story.kicker} finalized={finalized} onChange={(value) => onStoryChange(story.id, "kicker", value)} className="story-kicker" />}
+              <EditableText as="h2" value={story.title} finalized={finalized} onChange={(value) => onStoryChange(story.id, "title", value)} />
+              {story.dek && <EditableText as="p" value={story.dek} finalized={finalized} onChange={(value) => onStoryChange(story.id, "dek", value)} className="story-dek" multiline />}
+              {story.kind !== "comic" && (
+                <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} /></div>
+              )}
               {illustration && (
                 <figure
                   className={`story-art story-art-${illustration.kind} art-align-${illustrationAlign}`}
+                  style={artStyle}
                   title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
+                  onClick={(event) => { if (!finalized) { event.stopPropagation(); onChooseImage(story.id); } }}
                 >
                   <Image src={illustration.src} alt={illustration.alt} width={512} height={512} />
                   <figcaption>{story.kind === "comic" ? "Editorial cartoon" : illustration.alt}</figcaption>
+                  {!finalized && <button type="button" className="image-resize-handle" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => startImageResize(event, story)} aria-label="Resize image" title="Drag to resize image" />}
                 </figure>
               )}
-              {story.kind === "comic" && story.byline && <div className="story-byline">By {story.byline}</div>}
-              <StoryBody story={story} columns={settings.columns} />
+              {story.kind === "comic" && story.byline && (
+                <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} /></div>
+              )}
+              {story.location && story.kind !== "comic" && <EditableText as="span" value={story.location} finalized={finalized} onChange={(value) => onStoryChange(story.id, "location", value.toUpperCase())} className="story-location" />}
+              <StoryBody story={story} columns={settings.columns} finalized={finalized} onChange={(value) => onStoryChange(story.id, "body", value)} />
               {story.kind === "lead" && <div className="continued-mark">Continued inside</div>}
             </article>
           );

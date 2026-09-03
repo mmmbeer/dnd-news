@@ -13,10 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Inspector } from "@/components/studio/Inspector";
+import { ImagePickerDialog } from "@/components/studio/ImagePickerDialog";
 import { NewspaperPage } from "@/components/studio/NewspaperPage";
-import { StoryRail } from "@/components/studio/StoryRail";
-import type { IllustrationKind } from "@/lib/news/illustrations";
+import { StoryEditorDialog } from "@/components/studio/StoryEditorDialog";
+import { StudioSidebar, type StudioTab } from "@/components/studio/StudioSidebar";
 import {
   createBlankStory,
   createInitialIssue,
@@ -25,16 +25,14 @@ import {
   generateStories,
   generateStory,
   makeId,
-  randomByline,
   randomDate,
-  randomIllustrationForCategory,
   randomLocation,
   randomMotto,
   randomNewspaperName,
   seededRandom,
 } from "@/lib/news/generator";
 import { applyNewspaperPreset } from "@/lib/news/presets";
-import type { GeneratorOptions, IllustrationAlignment, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
+import type { GeneratorOptions, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
 
 const STORAGE_KEY = "broadsheet:issue:v1";
 
@@ -61,6 +59,7 @@ function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
       ...story,
       illustrationId: story.illustrationId ?? null,
       illustrationAlign: story.illustrationAlign ?? (story.kind === "comic" ? "center" : story.kind === "lead" ? "left" : "right"),
+      illustrationScale: story.illustrationScale ?? (story.kind === "comic" ? 100 : story.kind === "lead" ? 28 : story.width === "wide" ? 32 : 44),
     })),
   };
 }
@@ -71,6 +70,9 @@ export default function Home() {
   const [generator, setGenerator] = useState<GeneratorOptions>({ category: "any", tone: "straight", length: "standard" });
   const [generatorCount, setGeneratorCount] = useState(3);
   const [zoom, setZoom] = useState(85);
+  const [activeTab, setActiveTab] = useState<StudioTab>("layout");
+  const [storyEditorOpen, setStoryEditorOpen] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [saveLabel, setSaveLabel] = useState("Opening issue…");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -116,10 +118,22 @@ export default function Home() {
   }
 
   function updateStory<K extends keyof NewsStory>(key: K, value: NewsStory[K]) {
+    updateStoryById(selectedId, key, value);
+  }
+
+  function updateStoryById<K extends keyof NewsStory>(id: string, key: K, value: NewsStory[K]) {
     setIssue((current) => ({
       ...current,
-      stories: current.stories.map((story) => story.id === selectedId ? { ...story, [key]: value } : story),
+      stories: current.stories.map((story) => story.id === id ? { ...story, [key]: value } : story),
     }));
+  }
+
+  function saveStory(updated: NewsStory) {
+    setIssue((current) => ({
+      ...current,
+      stories: current.stories.map((story) => story.id === updated.id ? updated : story),
+    }));
+    setSelectedId(updated.id);
   }
 
   function applyPreset(presetId: NewspaperPresetId) {
@@ -134,6 +148,7 @@ export default function Home() {
     const story = createBlankStory();
     setIssue((current) => ({ ...current, stories: [...current.stories, story] }));
     setSelectedId(story.id);
+    setStoryEditorOpen(true);
   }
 
   function addComic() {
@@ -141,6 +156,7 @@ export default function Home() {
     const comic = generateComic(seed, issue.stories.length);
     setIssue((current) => ({ ...current, seed, stories: [...current.stories, comic] }));
     setSelectedId(comic.id);
+    setStoryEditorOpen(true);
   }
 
   function addGenerated(count = generatorCount) {
@@ -184,28 +200,32 @@ export default function Home() {
     });
   }
 
-  function rerollSelectedStory() {
-    if (!selectedStory) return;
+  function rerollStory(id: string) {
+    const source = issue.stories.find((story) => story.id === id);
+    if (!source) return;
     const seed = nextSeed(issue.seed);
-    const next = selectedStory.kind === "comic"
+    const next = source.kind === "comic"
       ? generateComic(seed)
       : generateStory(seed, {
         ...generator,
-        category: selectedStory.category,
-        length: selectedStory.kind === "brief" ? "brief" : generator.length,
+        category: source.category,
+        length: source.kind === "brief" ? "brief" : generator.length,
       });
     setIssue((current) => ({
       ...current,
       seed,
-      stories: current.stories.map((story) => story.id === selectedId ? { ...next, id: story.id } : story),
+      stories: current.stories.map((story) => story.id === id ? { ...next, id: story.id } : story),
     }));
   }
 
-  function randomizeStoryArt(kind?: IllustrationKind) {
-    if (!selectedStory) return;
-    const resolvedKind = kind ?? (selectedStory.kind === "comic" ? "cartoon" : undefined);
-    const artworkRng = seededRandom(`${issue.seed}:${selectedStory.id}:${resolvedKind ?? "any"}:${Date.now()}`);
-    updateStory("illustrationId", randomIllustrationForCategory(selectedStory.category, artworkRng, resolvedKind));
+  function openStoryEditor(id: string) {
+    setSelectedId(id);
+    setStoryEditorOpen(true);
+  }
+
+  function openImagePicker(id: string) {
+    setSelectedId(id);
+    setImagePickerOpen(true);
   }
 
   function rerollFillers() {
@@ -316,54 +336,80 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="studio-workspace">
-          <StoryRail
+        <div className={`studio-workspace ${activeTab === "finalize" ? "is-finalize-mode" : ""}`}>
+          <StudioSidebar
+            activeTab={activeTab}
+            settings={issue.settings}
             stories={issue.stories}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            generator={generator}
+            generatorCount={generatorCount}
+            seed={issue.seed}
+            onTabChange={setActiveTab}
+            onSettingsChange={updateSettings}
+            onApplyPreset={applyPreset}
+            onEdit={openStoryEditor}
             onAdd={addStory}
             onAddComic={addComic}
-            onGenerate={() => addGenerated(1)}
             onDelete={deleteStory}
             onDuplicate={duplicateStory}
             onMove={moveStory}
+            onGeneratorChange={updateGenerator}
+            onGeneratorCountChange={setGeneratorCount}
+            onSeedChange={(seed) => setIssue((current) => ({ ...current, seed }))}
+            onGenerate={() => addGenerated()}
+            onRerollFillers={rerollFillers}
+            onRollName={() => updateSettings("newspaperName", randomNewspaperName(rng()))}
+            onRollDate={() => updateSettings("publicationDate", randomDate(rng()))}
+            onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
+            onPrint={() => window.print()}
+            onExport={exportIssue}
           />
 
           <section className="preview-stage" aria-label="Newspaper preview">
             <div className="preview-stage-header">
-              <div><span className="preview-dot" /> Live front page</div>
+              <div><span className="preview-dot" /> {activeTab === "finalize" ? "Final proof" : "Editable front page"}</div>
               <span>{issue.settings.columns} columns · {issue.stories.filter((story) => story.kind !== "comic").length} stories · {issue.stories.filter((story) => story.kind === "comic").length} comics</span>
             </div>
             <div className="page-scroll">
               <div className="page-zoom" style={{ zoom: `${zoom}%` }}>
-                <NewspaperPage issue={issue} selectedId={selectedId} onSelect={setSelectedId} />
+                <NewspaperPage
+                  issue={issue}
+                  selectedId={selectedId}
+                  finalized={activeTab === "finalize"}
+                  onSelect={setSelectedId}
+                  onEdit={openStoryEditor}
+                  onDelete={deleteStory}
+                  onMove={moveStory}
+                  onChooseImage={openImagePicker}
+                  onStoryChange={updateStoryById}
+                  onSettingsChange={updateSettings}
+                />
               </div>
             </div>
           </section>
-
-          <Inspector
-            settings={issue.settings}
-            story={selectedStory}
-            seed={issue.seed}
-            generator={generator}
-            generatorCount={generatorCount}
-            onSettingsChange={updateSettings}
-            onApplyPreset={applyPreset}
-            onStoryChange={updateStory}
-            onSeedChange={(seed) => setIssue((current) => ({ ...current, seed }))}
-            onGeneratorChange={updateGenerator}
-            onCountChange={setGeneratorCount}
-            onAddGenerated={() => addGenerated()}
-            onRandomizeStory={rerollSelectedStory}
-            onRandomizeFillers={rerollFillers}
-            onRollName={() => updateSettings("newspaperName", randomNewspaperName(rng()))}
-            onRollDate={() => updateSettings("publicationDate", randomDate(rng()))}
-            onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
-            onRollByline={() => updateStory("byline", randomByline(generator.tone, rng()))}
-            onRollIllustration={randomizeStoryArt}
-            onIllustrationAlign={(alignment: IllustrationAlignment) => updateStory("illustrationAlign", alignment)}
-          />
         </div>
+
+        {storyEditorOpen && (
+          <StoryEditorDialog
+            story={selectedStory}
+            open
+            onOpenChange={setStoryEditorOpen}
+            onSave={saveStory}
+            onDelete={deleteStory}
+            onDuplicate={duplicateStory}
+            onReroll={rerollStory}
+            onChooseImage={openImagePicker}
+          />
+        )}
+        {imagePickerOpen && (
+          <ImagePickerDialog
+            story={selectedStory}
+            open
+            onOpenChange={setImagePickerOpen}
+            onApply={(illustrationId) => updateStory("illustrationId", illustrationId)}
+          />
+        )}
 
         <div className="mobile-note"><RefreshCw /> For the full layout desk, use a tablet or larger screen.</div>
       </div>
