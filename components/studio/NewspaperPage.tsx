@@ -105,6 +105,42 @@ function dropHintLabel(side: DropSide) {
   }
 }
 
+function useBrowserOwnedEditableHtml(
+  value: string,
+  html: string,
+  onChange: (value: string) => void,
+) {
+  const elementRef = useRef<HTMLElement | null>(null);
+  const lastEmittedValueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useLayoutEffect(() => {
+    lastEmittedValueRef.current = value;
+    const element = elementRef.current;
+
+    // React must not rewrite a focused contentEditable element. Doing so
+    // replaces the browser-managed text nodes and collapses the selection.
+    if (!element || document.activeElement === element) return;
+    if (element.innerHTML !== html) element.innerHTML = html;
+  }, [html, value]);
+
+  const setElement = useCallback((element: HTMLElement | null) => {
+    elementRef.current = element;
+  }, []);
+
+  const emitChange = useCallback((nextValue: string) => {
+    if (nextValue === lastEmittedValueRef.current) return;
+    lastEmittedValueRef.current = nextValue;
+    onChangeRef.current(nextValue);
+  }, []);
+
+  return { emitChange, setElement };
+}
+
 function EditableText({
   as: Component = "span",
   value,
@@ -129,8 +165,16 @@ function EditableText({
   };
   onChange: (value: string) => void;
 }) {
+  const html = editableTextHtml(value);
+  const { emitChange, setElement } = useBrowserOwnedEditableHtml(value, html, onChange);
+
+  function readValue(element: HTMLElement) {
+    return multiline ? element.innerText : element.textContent ?? "";
+  }
+
   return (
     <Component
+      ref={finalized ? undefined : setElement}
       className={`${className ?? ""} ${finalized ? "" : "preview-editable"}`.trim()}
       style={textStyle}
       data-text-scope={region.scope}
@@ -140,6 +184,9 @@ function EditableText({
       contentEditable={!finalized}
       suppressContentEditableWarning
       spellCheck={!finalized}
+      onInput={(event: React.FormEvent<HTMLElement>) => {
+        if (!finalized) emitChange(readValue(event.currentTarget));
+      }}
       onClick={(event: React.MouseEvent) => event.stopPropagation()}
       onKeyDown={(event: React.KeyboardEvent<HTMLElement>) => {
         event.stopPropagation();
@@ -149,13 +196,11 @@ function EditableText({
         }
       }}
       onBlur={(event: React.FocusEvent<HTMLElement>) => {
-        const next = multiline ? event.currentTarget.innerText : event.currentTarget.textContent ?? "";
-        if (next !== value) onChange(next);
+        emitChange(readValue(event.currentTarget));
       }}
-      // A contentEditable element's DOM belongs to the browser while it is being
-      // edited. Using innerHTML avoids asking React to diff browser-mutated text
-      // nodes when the committed value returns through application state.
-      dangerouslySetInnerHTML={{ __html: editableTextHtml(value) }}
+      // In edit mode the browser owns the contents and the hook synchronizes
+      // external changes only while this element is unfocused.
+      dangerouslySetInnerHTML={finalized ? { __html: html } : undefined}
     />
   );
 }
@@ -168,6 +213,9 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
   const renderedBody = isFitted ? fittedBody : story.body;
   const isEmpty = !renderedBody.trim();
   const bodyColumns = storyBodyColumns(story, columns);
+  const bodyHtml = storyBodyHtml(renderedBody);
+  const isBrowserEditable = !finalized && !isFitted;
+  const { emitChange, setElement } = useBrowserOwnedEditableHtml(story.body, bodyHtml, onChange);
 
   const fitBody = useCallback(() => {
     if (!isFitted) return;
@@ -261,7 +309,10 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
 
   return (
     <div
-      ref={bodyRef}
+      ref={(element) => {
+        bodyRef.current = element;
+        setElement(isBrowserEditable ? element : null);
+      }}
       className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${isFitted ? "is-auto-fit" : finalized ? "" : "preview-editable"}`.trim()}
       style={{ columnCount: bodyColumns, ...story.textStyles?.body }}
       data-placeholder={!finalized && isEmpty ? "Click to add story copy" : undefined}
@@ -273,14 +324,16 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
       suppressContentEditableWarning
       spellCheck={!finalized && !isFitted}
       title={isFitted ? "Automatically fitted lorem ipsum. The original story copy is preserved." : undefined}
+      onInput={(event) => {
+        if (isBrowserEditable) emitChange(event.currentTarget.innerText.trim());
+      }}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       onBlur={(event) => {
         if (isFitted) return;
-        const next = event.currentTarget.innerText.trim();
-        if (next !== story.body) onChange(next);
+        emitChange(event.currentTarget.innerText.trim());
       }}
-      dangerouslySetInnerHTML={{ __html: storyBodyHtml(renderedBody) }}
+      dangerouslySetInnerHTML={isBrowserEditable ? undefined : { __html: bodyHtml }}
     />
   );
 }

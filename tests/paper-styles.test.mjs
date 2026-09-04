@@ -81,6 +81,10 @@ test("keeps browser-edited text outside React child reconciliation", async () =>
   assert.equal(editableTextHtml('<New & "Improved">'), "&lt;New &amp; &quot;Improved&quot;&gt;");
   assert.equal(storyBodyHtml("First <dispatch>.\n\nSecond & final."), "<p>First &lt;dispatch&gt;.</p><p>Second &amp; final.</p>");
   assert.match(source, /dangerouslySetInnerHTML/);
+  assert.match(source, /document\.activeElement === element/);
+  assert.match(source, /onInput=/);
+  assert.match(source, /dangerouslySetInnerHTML=\{finalized \?/);
+  assert.match(source, /dangerouslySetInnerHTML=\{isBrowserEditable \?/);
   assert.doesNotMatch(source, /empty-copy-placeholder/);
   assert.doesNotMatch(controller, /collectRegions/);
   assert.match(controller, /regionFromElement/);
