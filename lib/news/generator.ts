@@ -17,6 +17,7 @@ import {
   randomNewspaperName,
   renderStoryTemplate,
 } from "./template-engine";
+import { fittedLoremBody } from "./fitted-lorem";
 import { storyTemplates, templatesForCategory } from "./templates";
 import type { StoryTemplate } from "./story-template";
 import type {
@@ -194,12 +195,13 @@ export function createInitialIssue(seed = "blackwater-press"): NewspaperIssue {
   const preset = getNewspaperPreset("blackwater");
   const lead: NewsStory = {
     id: "custom-lead",
-    title: "The Bell Beneath Blackwater Rings Again",
-    kicker: "Late Edition · Exclusive",
-    dek: "After eighty silent years, the drowned bell has sounded three times. The river watch has closed the lower quay.",
-    byline: "Mira Bellweather, Senior Correspondent",
-    location: "BLACKWATER",
-    body: "The bell beneath the old river chapel rang at thirteen minutes past midnight, waking residents from Dock Ward to Lantern Hill. There is no surviving rope, tower or dry passage to the chamber where the bell is believed to rest.\n\nHarbormaster Elian Reed ordered the lower quay closed after patrol boats reported lights moving beneath the water. The Watch has requested assistance from divers, priests and anyone familiar with pre-imperial wards.\n\nNo one is missing, officials say. At press time, however, every dog along the south bank was facing the river.",
+    title: "DM: Replace This Title With Your Lead Story",
+    kicker: "Dungeon Master's Lead Story",
+    dek: "Replace this summary with the essential setup, stakes, and hook for your campaign's lead story.",
+    byline: "Your Name, Dungeon Master",
+    location: "YOUR CAMPAIGN LOCATION",
+    body: fittedLoremBody(250, "dm-lead-placeholder"),
+    bodyMode: "story",
     kind: "lead",
     width: "full",
     category: "adventure",

@@ -60,6 +60,22 @@ test("creates deterministic, exact-length lorem copy for fitted story frames", a
   assert.equal(fittedLoremBody(0, "empty").split(/\s+/).length, 1);
 });
 
+test("starts with an editable DM lead placeholder outside the procedural library", async () => {
+  const { createInitialIssue } = await vite.ssrLoadModule("/lib/news/generator.ts");
+  const { storyTemplates } = await vite.ssrLoadModule("/lib/news/templates/index.ts");
+  const issue = createInitialIssue("dm-placeholder-test");
+  const lead = issue.stories[0];
+
+  assert.equal(lead.id, "custom-lead");
+  assert.equal(lead.kind, "lead");
+  assert.equal(lead.generated, false);
+  assert.equal(lead.bodyMode, "story");
+  assert.match(lead.title, /^DM: Replace This Title/i);
+  assert.equal(lead.body.split(/\s+/).length, 250);
+  assert.match(lead.body, /lorem|ipsum/i);
+  assert.equal(storyTemplates.some((template) => template.id === lead.id), false);
+});
+
 test("ships at least one hundred resolvable story templates", async () => {
   const { storyTemplates } = await vite.ssrLoadModule("/lib/news/templates/index.ts");
   const { renderStoryTemplate } = await vite.ssrLoadModule("/lib/news/template-engine.ts");
