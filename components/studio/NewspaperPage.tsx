@@ -17,6 +17,7 @@ import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverl
 import { editableTextHtml, storyBodyHtml } from "@/lib/news/editable-html";
 import { fittedLoremBody } from "@/lib/news/fitted-lorem";
 import { fontFamilyFor } from "@/lib/news/fonts";
+import { colorThemeFor, paperColorFor } from "@/lib/news/paper-styles";
 import type { NewsStory, NewspaperIssue, IssueSettings, TextRegionStyle } from "@/lib/news/types";
 import { illustrationById, type StoryIllustration } from "@/lib/news/illustrations";
 import { storyBodyColumns, storyColumnSpan } from "@/lib/news/layout";
@@ -35,13 +36,6 @@ interface NewspaperPageProps {
   onStoryChange: <K extends keyof NewsStory>(id: string, key: K, value: NewsStory[K]) => void;
   onSettingsChange: <K extends keyof IssueSettings>(key: K, value: IssueSettings[K]) => void;
 }
-
-const colorThemes = {
-  charcoal: "#20201e",
-  oxblood: "#721c24",
-  navy: "#193451",
-  forest: "#214c3a",
-};
 
 type DropSide = "left" | "right" | "top" | "bottom" | "margin-left" | "margin-right";
 
@@ -516,11 +510,13 @@ export function NewspaperPage({
     };
   }, [issue.stories, settings, finalized]);
 
-  const paperLightness = 97 - settings.paperTone * 0.045;
+  const accent = colorThemeFor(settings.colorTheme);
+  const paper = paperColorFor(settings.paperColor);
   const style = {
     position: "relative",
-    "--news-accent": colorThemes[settings.colorTheme],
-    "--news-paper": `hsl(43 38% ${paperLightness}%)`,
+    "--news-accent": accent.color,
+    "--news-paper": paper.color,
+    "--news-paper-edge": paper.edgeColor,
     "--masthead-font": fontFamilyFor("masthead", settings.mastheadFont),
     "--headline-font": fontFamilyFor("headline", settings.headlineFont),
     "--body-font": fontFamilyFor("body", settings.bodyFont),
@@ -662,6 +658,7 @@ export function NewspaperPage({
   return (
     <div
       data-pdf-export-root
+      data-paper-color={paper.id}
       className={`newspaper-page page-${settings.pageSize} ${settings.showRules ? "with-rules" : ""} ${settings.justifyText ? "is-justified" : ""} ${settings.showDropCaps ? "with-dropcaps" : ""} ${finalized ? "is-finalized" : "is-editing"}`}
       style={style}
       onDragOver={(event) => {
@@ -887,7 +884,13 @@ export function NewspaperPage({
           onSettingsChange={onSettingsChange}
         />
       )}
-      <PaperWeatheringOverlay paperAge={settings.paperTone} enabled={settings.paperWeathering !== false} seed={issue.seed} />
+      <PaperWeatheringOverlay
+        paperAge={settings.paperTone}
+        enabled={settings.paperWeathering !== false}
+        seed={issue.seed}
+        opacityScale={paper.weatheringOpacity}
+        saturation={paper.weatheringSaturation}
+      />
     </div>
   );
 }

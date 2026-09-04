@@ -45,7 +45,7 @@ function selectRasters(level: number, count: number, rng: () => number) {
   return shuffled([...marks.slice(0, count - textureCount), ...textures.slice(0, textureCount)], rng);
 }
 
-function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: number, rng: () => number) {
+function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: number, opacityScale: number, rng: () => number) {
   const intensity = level / 25;
   const isTexture = asset.kind === "texture";
   const width = isTexture ? between(rng, 58, 112) : between(rng, 13, 39 + intensity * 8);
@@ -66,7 +66,7 @@ function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: numbe
     aspectRatio: asset.aspectRatio,
     transform: `translate(-50%, -50%) rotate(${rotation.toFixed(2)}deg) scaleX(${flip})`,
     transformOrigin: "center",
-    opacity: Math.min(1, asset.baseOpacity * opacity * between(rng, 0.72, 1.18)),
+    opacity: Math.min(1, asset.baseOpacity * opacity * opacityScale * between(rng, 0.72, 1.18)),
     mixBlendMode: asset.blendMode,
     maskImage: feather,
     WebkitMaskImage: feather,
@@ -75,7 +75,19 @@ function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: numbe
   };
 }
 
-export function PaperWeatheringOverlay({ paperAge, enabled, seed }: { paperAge: number; enabled: boolean; seed: string }) {
+export function PaperWeatheringOverlay({
+  paperAge,
+  enabled,
+  seed,
+  opacityScale = 1,
+  saturation = 1,
+}: {
+  paperAge: number;
+  enabled: boolean;
+  seed: string;
+  opacityScale?: number;
+  saturation?: number;
+}) {
   const overlay = weatheringOverlayForAge(paperAge);
   if (!enabled || !overlay) return null;
 
@@ -92,7 +104,7 @@ export function PaperWeatheringOverlay({ paperAge, enabled, seed }: { paperAge: 
         inset: 0,
         overflow: "hidden",
         pointerEvents: "none",
-        zIndex: 6,
+        zIndex: 0,
       }}
     >
       {rasters.map((asset, index) => (
@@ -100,14 +112,14 @@ export function PaperWeatheringOverlay({ paperAge, enabled, seed }: { paperAge: 
           key={`${asset.id}-${index}`}
           data-weathering-effect={asset.id}
           data-weathering-kind={asset.kind}
-          style={effectStyle(asset, overlay.level, overlay.opacity, rng)}
+          style={effectStyle(asset, overlay.level, overlay.opacity, opacityScale, rng)}
         >
           <Image
             src={asset.src}
             alt=""
             fill
             sizes={asset.kind === "texture" ? "100vw" : "40vw"}
-            style={{ objectFit: "contain" }}
+            style={{ objectFit: "contain", filter: `saturate(${saturation})` }}
             draggable={false}
             unoptimized
           />

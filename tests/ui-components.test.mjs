@@ -45,6 +45,8 @@ test("emits the application and print styles", async () => {
   assert.match(css, /@media print/);
   assert.match(css, /\.shared-newspaper-shell/);
   assert.match(css, /\.share-qr-panel/);
+  assert.match(css, /\.paper-color-option/);
+  assert.match(css, /background:\s*var\(--news-paper\)/);
 });
 
 test("converts measured story heights into compact masonry rows", async () => {

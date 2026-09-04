@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   AlignJustify,
   CalendarDays,
@@ -28,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { bodyFontOptions, headlineFontOptions, mastheadFontOptions } from "@/lib/news/fonts";
 import { categoryLabels } from "@/lib/news/generator";
+import { colorThemeFor, colorThemeOptions, paperColorOptions } from "@/lib/news/paper-styles";
 import { newspaperPresets } from "@/lib/news/presets";
 import { weatheringLabelForAge } from "@/lib/news/weathering";
 import type {
@@ -207,7 +208,8 @@ export function StudioSidebar(props: StudioSidebarProps) {
                   key={preset.id}
                   type="button"
                   role="listitem"
-                  className={`preset-card preset-${preset.settings.colorTheme} ${settings.presetId === preset.id ? "is-active" : ""}`}
+                  className={`preset-card ${settings.presetId === preset.id ? "is-active" : ""}`}
+                  style={{ "--preset-accent": colorThemeFor(preset.settings.colorTheme).color } as CSSProperties}
                   onClick={() => onApplyPreset(preset.id)}
                 >
                   <span className="preset-card-mark">Aa</span>
@@ -265,8 +267,32 @@ export function StudioSidebar(props: StudioSidebarProps) {
             <div className="sidebar-section-heading"><span className="eyebrow">Finish</span><h2>Ink and paper</h2></div>
             <Field label="Accent ink">
               <div className="swatch-row">
-                {(["charcoal", "oxblood", "navy", "forest"] as const).map((theme) => (
-                  <button key={theme} className={`color-swatch swatch-${theme} ${settings.colorTheme === theme ? "is-active" : ""}`} onClick={() => onSettingsChange("colorTheme", theme)} aria-label={`${theme} ink`} />
+                {colorThemeOptions.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    className={`color-swatch ${settings.colorTheme === theme.id ? "is-active" : ""}`}
+                    style={{ background: theme.color }}
+                    onClick={() => onSettingsChange("colorTheme", theme.id)}
+                    aria-label={`${theme.label} ink`}
+                    title={theme.label}
+                  />
+                ))}
+              </div>
+            </Field>
+            <Field label="Paper color">
+              <div className="paper-swatch-row">
+                {paperColorOptions.map((paper) => (
+                  <button
+                    key={paper.id}
+                    type="button"
+                    className={`paper-color-option ${settings.paperColor === paper.id ? "is-active" : ""}`}
+                    onClick={() => onSettingsChange("paperColor", paper.id)}
+                    aria-label={`${paper.label} paper`}
+                  >
+                    <span className="paper-color-swatch" style={{ background: paper.color }} aria-hidden="true" />
+                    <span>{paper.label}</span>
+                  </button>
                 ))}
               </div>
             </Field>

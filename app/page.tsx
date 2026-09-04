@@ -67,6 +67,7 @@ function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
       ...defaults.settings,
       ...issue.settings,
       presetId: issue.settings.presetId ?? "blackwater",
+      paperColor: issue.settings.paperColor ?? "white",
     },
     stories: issue.stories.map((story) => ({
       ...story,
