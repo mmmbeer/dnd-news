@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const projectRoot = process.env.SITES_PROJECT_ROOT ?? process.cwd();
+const projectRoot = process.cwd();
 const configPath = resolve(projectRoot, "dist", "server", "wrangler.json");
 const config = JSON.parse(await readFile(configPath, "utf8"));
 

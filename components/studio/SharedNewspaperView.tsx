@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FilePlus2, LoaderCircle, Newspaper, Printer } from "lucide-react";
+import { FileDown, FilePlus2, LoaderCircle, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { NewspaperPage } from "@/components/studio/NewspaperPage";
+import { PdfExportDialog } from "@/components/studio/PdfExportDialog";
 import type { NewspaperIssue } from "@/lib/news/types";
 
 interface SharedNewspaperViewProps {
@@ -22,6 +23,7 @@ export function SharedNewspaperView({ id }: SharedNewspaperViewProps) {
   const [snapshot, setSnapshot] = useState<SharedSnapshotResponse | null>(null);
   const [error, setError] = useState("");
   const [zoom, setZoom] = useState(85);
+  const [pdfExportOpen, setPdfExportOpen] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -84,7 +86,7 @@ export function SharedNewspaperView({ id }: SharedNewspaperViewProps) {
           <NativeSelect size="sm" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} aria-label="Newspaper zoom">
             {[60, 70, 85, 100, 115].map((value) => <NativeSelectOption key={value} value={value}>{value}%</NativeSelectOption>)}
           </NativeSelect>
-          <Button variant="ghost" size="sm" onClick={() => window.print()}><Printer /> Print / PDF</Button>
+          <Button variant="ghost" size="sm" onClick={() => setPdfExportOpen(true)}><FileDown /> PDF</Button>
           <Button asChild size="sm"><Link href="/"><FilePlus2 /> Create your own</Link></Button>
         </div>
       </header>
@@ -106,6 +108,14 @@ export function SharedNewspaperView({ id }: SharedNewspaperViewProps) {
           />
         </div>
       </main>
+      {pdfExportOpen && (
+        <PdfExportDialog
+          open
+          issueName={issue.settings.newspaperName}
+          newspaperPageSize={issue.settings.pageSize}
+          onOpenChange={setPdfExportOpen}
+        />
+      )}
     </div>
   );
 }

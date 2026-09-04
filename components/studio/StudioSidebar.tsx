@@ -7,12 +7,12 @@ import {
   Copy,
   Download,
   Edit3,
+  FileDown,
   GripVertical,
   MapPin,
   MessageSquareQuote,
   Newspaper,
   Plus,
-  Printer,
   RefreshCw,
   Share2,
   Sparkles,
@@ -68,7 +68,7 @@ interface StudioSidebarProps {
   onRollName: () => void;
   onRollDate: () => void;
   onRollDateline: () => void;
-  onPrint: () => void;
+  onPdfExport: () => void;
   onExport: () => void;
   onShare: () => void;
 }
@@ -144,7 +144,7 @@ export function StudioSidebar(props: StudioSidebarProps) {
     onRollName,
     onRollDate,
     onRollDateline,
-    onPrint,
+    onPdfExport,
     onExport,
     onShare,
   } = props;
@@ -388,14 +388,14 @@ export function StudioSidebar(props: StudioSidebarProps) {
         <TabsContent value="finalize" className="sidebar-tab-content finalize-tab-content">
           <section className="sidebar-section finalize-panel">
             <div className="sidebar-section-heading"><span className="eyebrow">Clean proof</span><h2>Finalize issue</h2></div>
-            <p>The preview now hides editing outlines, controls, grab handles, and resize anchors. This is the layout used for print and PDF output.</p>
+            <p>The preview now hides editing outlines, controls, grab handles, and resize anchors. This is the layout used for PDF output.</p>
             <dl className="issue-summary">
               <div><dt>Paper</dt><dd>{settings.newspaperName}</dd></div>
               <div><dt>Page</dt><dd>{settings.pageSize} · {settings.columns} columns</dd></div>
               <div><dt>Content</dt><dd>{stories.filter((story) => story.kind !== "comic").length} stories · {stories.filter((story) => story.kind === "comic").length} comics</dd></div>
               <div><dt>Images</dt><dd>{stories.filter((story) => story.illustrationId).length} placed</dd></div>
             </dl>
-            <Button className="full-button" onClick={onPrint}><Printer /> Print or save PDF</Button>
+            <Button className="full-button" onClick={onPdfExport}><FileDown /> Export PDF</Button>
             <Button className="full-button" onClick={onShare}><Share2 /> Save and share</Button>
             <Button variant="outline" className="full-button" onClick={onExport}><Download /> Export editable issue</Button>
             <p className="finalize-note">Return to Layout or Stories to resume editing.</p>

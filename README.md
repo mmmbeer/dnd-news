@@ -16,7 +16,7 @@ Broadsheet is a local-first fantasy newspaper studio for tabletop campaigns. It 
 - Preserve DM-written or locked stories while rerolling filler
 - Autosave on the current device
 - Import and export complete issues as JSON
-- Print directly or save as PDF
+- Export directly to PDF with page, layout, margin and quality settings
 - Save an immutable, read-only edition behind a UUID share link
 - Display or download a QR code for a shared edition
 - Automatically expire and delete shared editions after 30 days
@@ -48,8 +48,8 @@ links render that snapshot without editor controls. Expired rows are rejected
 and deleted during reads and writes, while the scheduled Worker cleanup removes
 expired rows daily.
 
-The managed Sites deployment provisions the logical `DB` binding declared in
-`.openai/hosting.json` and applies the checked-in Drizzle migration.
+Cloudflare Workers provides the `DB` binding declared in `wrangler.jsonc`.
+The checked-in Drizzle migration can be applied through the deployment script.
 
 ## Cloudflare Workers
 

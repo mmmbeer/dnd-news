@@ -491,6 +491,7 @@ export function NewspaperPage({
 
   return (
     <div
+      data-pdf-export-root
       className={`newspaper-page page-${settings.pageSize} ${settings.showRules ? "with-rules" : ""} ${settings.justifyText ? "is-justified" : ""} ${settings.showDropCaps ? "with-dropcaps" : ""} ${finalized ? "is-finalized" : "is-editing"}`}
       style={style}
       onDragOver={(event) => {

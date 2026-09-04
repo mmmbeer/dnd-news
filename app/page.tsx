@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
+  FileDown,
   FilePlus2,
-  Printer,
   RefreshCw,
   Save,
   Share2,
@@ -16,6 +16,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ImagePickerDialog } from "@/components/studio/ImagePickerDialog";
 import { NewspaperPage } from "@/components/studio/NewspaperPage";
+import { PdfExportDialog } from "@/components/studio/PdfExportDialog";
 import { StoryEditorDialog } from "@/components/studio/StoryEditorDialog";
 import { ShareNewspaperDialog, type ShareSnapshot } from "@/components/studio/ShareNewspaperDialog";
 import { StudioSidebar, type StudioTab } from "@/components/studio/StudioSidebar";
@@ -84,6 +85,7 @@ export default function Home() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [shareSnapshot, setShareSnapshot] = useState<ShareSnapshot | null>(null);
+  const [pdfExportOpen, setPdfExportOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -394,7 +396,7 @@ export default function Home() {
             <Button variant="ghost" size="sm" onClick={() => fileInput.current?.click()}><Upload /> Import</Button>
             <Button variant="ghost" size="sm" onClick={exportIssue}><Download /> Export</Button>
             <Button variant="ghost" size="sm" onClick={shareIssue}><Share2 /> Share</Button>
-            <Button variant="ghost" size="sm" onClick={() => window.print()}><Printer /> Print / PDF</Button>
+            <Button variant="ghost" size="sm" onClick={() => setPdfExportOpen(true)}><FileDown /> PDF</Button>
             <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={(event) => event.target.files?.[0] && importIssue(event.target.files[0])} />
           </div>
 
@@ -433,7 +435,7 @@ export default function Home() {
             onRollName={() => updateSettings("newspaperName", randomNewspaperName(rng()))}
             onRollDate={() => updateSettings("publicationDate", randomDate(rng()))}
             onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}
-            onPrint={() => window.print()}
+            onPdfExport={() => setPdfExportOpen(true)}
             onExport={exportIssue}
             onShare={shareIssue}
           />
@@ -493,6 +495,14 @@ export default function Home() {
           onOpenChange={setShareOpen}
           onRetry={shareIssue}
         />
+        {pdfExportOpen && (
+          <PdfExportDialog
+            open
+            issueName={issue.settings.newspaperName}
+            newspaperPageSize={issue.settings.pageSize}
+            onOpenChange={setPdfExportOpen}
+          />
+        )}
 
         <div className="mobile-note"><RefreshCw /> For the full layout desk, use a tablet or larger screen.</div>
       </div>
