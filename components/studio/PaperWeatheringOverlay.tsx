@@ -104,7 +104,9 @@ export function PaperWeatheringOverlay({
         inset: 0,
         overflow: "hidden",
         pointerEvents: "none",
-        zIndex: 0,
+        // Keep paper texture below the ink without creating a stacking
+        // context around the content. Article art must blend with the page.
+        zIndex: -1,
       }}
     >
       {rasters.map((asset, index) => (
