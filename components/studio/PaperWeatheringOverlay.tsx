@@ -48,15 +48,34 @@ function selectRasters(level: number, count: number, rng: () => number) {
 function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: number, opacityScale: number, rng: () => number) {
   const intensity = level / 25;
   const isTexture = asset.kind === "texture";
-  const width = isTexture ? between(rng, 58, 112) : between(rng, 13, 39 + intensity * 8);
-  const edgeRange = isTexture ? 12 : 4;
+  const appliedOpacity = Math.min(1, asset.baseOpacity * opacity * opacityScale * between(rng, 0.72, 1.18));
+  const flip = rng() > 0.5 ? -1 : 1;
+
+  if (isTexture) {
+    return {
+      position: "absolute" as const,
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      transform: `scaleX(${flip})`,
+      transformOrigin: "center",
+      opacity: appliedOpacity,
+      mixBlendMode: asset.blendMode,
+      maskImage: "linear-gradient(#000, #000)",
+      WebkitMaskImage: "linear-gradient(#000, #000)",
+      maskRepeat: "no-repeat",
+      WebkitMaskRepeat: "no-repeat",
+      maskSize: "100% 100%",
+      WebkitMaskSize: "100% 100%",
+    };
+  }
+
+  const width = between(rng, 13, 39 + intensity * 8);
+  const edgeRange = 4;
   const x = between(rng, -edgeRange, 100 + edgeRange);
   const y = between(rng, -edgeRange, 100 + edgeRange);
-  const rotation = between(rng, isTexture ? -12 : -175, isTexture ? 12 : 175);
-  const flip = rng() > 0.5 ? -1 : 1;
-  const feather = isTexture
-    ? "radial-gradient(ellipse 78% 76% at center, #000 46%, rgba(0,0,0,.94) 63%, transparent 100%)"
-    : "radial-gradient(ellipse 72% 70% at center, #000 48%, rgba(0,0,0,.9) 68%, transparent 100%)";
+  const rotation = between(rng, -175, 175);
+  const feather = "radial-gradient(ellipse 72% 70% at center, #000 48%, rgba(0,0,0,.9) 68%, transparent 100%)";
 
   return {
     position: "absolute" as const,
@@ -66,7 +85,7 @@ function effectStyle(asset: PaperWeatheringRaster, level: number, opacity: numbe
     aspectRatio: asset.aspectRatio,
     transform: `translate(-50%, -50%) rotate(${rotation.toFixed(2)}deg) scaleX(${flip})`,
     transformOrigin: "center",
-    opacity: Math.min(1, asset.baseOpacity * opacity * opacityScale * between(rng, 0.72, 1.18)),
+    opacity: appliedOpacity,
     mixBlendMode: asset.blendMode,
     maskImage: feather,
     WebkitMaskImage: feather,
@@ -112,6 +131,7 @@ export function PaperWeatheringOverlay({
           key={`${asset.id}-${index}`}
           data-weathering-effect={asset.id}
           data-weathering-kind={asset.kind}
+          data-weathering-coverage={asset.kind === "texture" ? "page" : "localized"}
           style={effectStyle(asset, overlay.level, overlay.opacity, opacityScale, rng)}
         >
           <Image
@@ -119,7 +139,10 @@ export function PaperWeatheringOverlay({
             alt=""
             fill
             sizes={asset.kind === "texture" ? "100vw" : "40vw"}
-            style={{ objectFit: "contain", filter: `saturate(${saturation})` }}
+            style={{
+              objectFit: asset.kind === "texture" ? "cover" : "contain",
+              filter: `saturate(${saturation}) contrast(1.08)`,
+            }}
             draggable={false}
             unoptimized
           />

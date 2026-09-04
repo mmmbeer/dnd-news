@@ -62,7 +62,12 @@ test("offers expanded ink and paper palettes with balanced weathering profiles",
   assert.ok(paperColorOptions.some((option) => option.id === "parchment"));
   assert.ok(paperColorOptions.filter((option) => option.id.includes("gray") || option.id === "newsprint").length >= 4);
   assert.ok(paperColorOptions.every((option) => option.weatheringOpacity > 0 && option.weatheringOpacity <= 1));
-  assert.ok(paperColorOptions.every((option) => option.weatheringSaturation > 0 && option.weatheringSaturation <= 1));
+  assert.ok(paperColorOptions.every((option) => option.weatheringSaturation >= 0 && option.weatheringSaturation <= 1));
+  assert.ok(
+    paperColorOptions
+      .filter((option) => option.id.includes("gray") || option.id === "newsprint")
+      .every((option) => option.weatheringSaturation === 0),
+  );
 });
 
 test("exposes expanded masthead, headline and body font families", async () => {
@@ -100,6 +105,7 @@ test("maps paper age monotonically across 25 weathering overlays", async () => {
 
   for (const raster of paperWeatheringRasters) {
     assert.match(raster.src, /^\/weathering\/[a-z0-9-]+\.webp$/);
+    assert.ok(raster.blendMode === "multiply" || raster.blendMode === "soft-light");
     await access(path.join(root, "public", raster.src));
   }
 });
@@ -110,8 +116,13 @@ test("uses masked raster weathering instead of generated SVG geometry", async ()
   assert.match(source, /maskImage/);
   assert.match(source, /mixBlendMode/);
   assert.match(source, /data-weathering-effect/);
+  assert.match(source, /data-weathering-coverage/);
   assert.match(source, /opacityScale/);
   assert.match(source, /saturate\(\$\{saturation\}\)/);
+  assert.match(source, /if \(isTexture\)/);
+  assert.match(source, /width: "100%"/);
+  assert.match(source, /height: "100%"/);
+  assert.match(source, /objectFit: asset\.kind === "texture" \? "cover" : "contain"/);
 });
 
 test("keeps browser-edited text outside React child reconciliation", async () => {

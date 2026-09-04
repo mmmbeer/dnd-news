@@ -33,10 +33,10 @@ export const paperColorOptions: PaperColorOption[] = [
   { id: "ivory", label: "Ivory", color: "#fbf7e9", edgeColor: "rgba(126, 103, 57, 0.045)", weatheringOpacity: 0.96, weatheringSaturation: 0.92 },
   { id: "parchment", label: "Parchment", color: "#f1e2bd", edgeColor: "rgba(126, 86, 34, 0.06)", weatheringOpacity: 0.82, weatheringSaturation: 0.76 },
   { id: "aged-parchment", label: "Aged parchment", color: "#e3cb96", edgeColor: "rgba(111, 71, 25, 0.075)", weatheringOpacity: 0.72, weatheringSaturation: 0.68 },
-  { id: "mist-gray", label: "Mist gray", color: "#f1f2ef", edgeColor: "rgba(71, 79, 77, 0.04)", weatheringOpacity: 0.92, weatheringSaturation: 0.48 },
-  { id: "newsprint", label: "Newsprint gray", color: "#e2e2dc", edgeColor: "rgba(63, 67, 64, 0.05)", weatheringOpacity: 0.86, weatheringSaturation: 0.4 },
-  { id: "silver-gray", label: "Silver gray", color: "#d3d5d2", edgeColor: "rgba(48, 54, 52, 0.06)", weatheringOpacity: 0.82, weatheringSaturation: 0.34 },
-  { id: "ash-gray", label: "Ash gray", color: "#c4c7c3", edgeColor: "rgba(41, 47, 45, 0.07)", weatheringOpacity: 0.78, weatheringSaturation: 0.28 },
+  { id: "mist-gray", label: "Mist gray", color: "#f1f2ef", edgeColor: "rgba(71, 79, 77, 0.04)", weatheringOpacity: 0.92, weatheringSaturation: 0 },
+  { id: "newsprint", label: "Newsprint gray", color: "#e2e2dc", edgeColor: "rgba(63, 67, 64, 0.05)", weatheringOpacity: 0.86, weatheringSaturation: 0 },
+  { id: "silver-gray", label: "Silver gray", color: "#d3d5d2", edgeColor: "rgba(48, 54, 52, 0.06)", weatheringOpacity: 0.82, weatheringSaturation: 0 },
+  { id: "ash-gray", label: "Ash gray", color: "#c4c7c3", edgeColor: "rgba(41, 47, 45, 0.07)", weatheringOpacity: 0.78, weatheringSaturation: 0 },
 ];
 
 const colorThemeMap = new Map(colorThemeOptions.map((option) => [option.id, option]));
