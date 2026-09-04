@@ -82,9 +82,9 @@ const generatedIllustrations: StoryIllustration[] = rows.map(([id, label, alt, c
 
 const publicDomainIllustrations: StoryIllustration[] = publicDomainCatalog.map((artwork, index) => ({
   id: artwork.id,
-  label: artwork.kind === "cartoon"
+  label: (artwork as { label?: string }).label ?? (artwork.kind === "cartoon"
     ? `Editorial cartoon ${String(index - 60).padStart(2, "0")}`
-    : `Historical engraving ${String(index + 1).padStart(2, "0")}`,
+    : `Historical engraving ${String(index + 1).padStart(2, "0")}`),
   alt: artwork.alt,
   category: artwork.categories[0] as Exclude<StoryCategory, "any">,
   categories: artwork.categories as Exclude<StoryCategory, "any">[],

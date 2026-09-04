@@ -159,10 +159,10 @@ test("maps the generated and public-domain art pools across the complete story l
   const used = new Set(storyTemplates.map((template) => template.illustrationId));
   const counts = Object.groupBy(storyIllustrations, (illustration) => illustration.kind);
 
-  assert.equal(storyIllustrations.length, 124);
+  assert.equal(storyIllustrations.length, 154);
   assert.equal(known.size, storyIllustrations.length);
   assert.equal(counts.generated?.length, 50);
-  assert.equal(counts.historical?.length, 61);
+  assert.equal(counts.historical?.length, 91);
   assert.equal(counts.cartoon?.length, 13);
   assert.deepEqual([...used].filter((id) => !known.has(id)), []);
   assert.deepEqual(

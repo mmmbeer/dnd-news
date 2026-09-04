@@ -14,9 +14,9 @@ test("ships a provenance-tracked public-domain art pool", async () => {
   const illustrations = catalog.filter((artwork) => artwork.kind === "illustration");
   const cartoons = catalog.filter((artwork) => artwork.kind === "cartoon");
 
-  assert.ok(catalog.length >= 50 && catalog.length <= 100);
-  assert.ok(illustrations.length >= 50);
-  assert.ok(cartoons.length >= 10);
+  assert.ok(catalog.length >= 104);
+  assert.ok(illustrations.length >= 91);
+  assert.ok(cartoons.length >= 13);
   assert.equal(new Set(catalog.map((artwork) => artwork.id)).size, catalog.length);
   assert.equal(new Set(catalog.map((artwork) => artwork.src)).size, catalog.length);
 
