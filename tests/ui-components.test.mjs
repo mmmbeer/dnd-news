@@ -127,12 +127,16 @@ test("selects rendered images before offering replace and remove controls", asyn
 
   assert.match(pageSource, /const \[selectedImageId, setSelectedImageId\]/);
   assert.match(pageSource, /function StoryArtwork/);
+  assert.match(pageSource, /key="story-copy"/);
+  assert.match(pageSource, /key="story-artwork"/);
+  assert.match(pageSource, /className=\{shellClassName\}/);
   assert.match(pageSource, /onSelect=\{\(\) => \{[\s\S]*setSelectedImageId\(story\.id\);[\s\S]*onSelect\(story\.id\)/);
   assert.match(pageSource, /selected\s*&&\s*\([\s\S]*className="image-replace-button"/);
   assert.match(pageSource, /className="image-replace-button"[\s\S]*onReplace\(\)/);
   assert.match(pageSource, /className="image-delete-button"[\s\S]*onRemove\(\)/);
   assert.match(pageSource, /onRemoveImage\(story\.id\)/);
-  assert.match(appSource, /illustrationId:\s*null,\s*illustrationCaption:\s*""/);
+  assert.match(appSource, /withStoryIllustration\(story, illustrationId\)/);
+  assert.match(appSource, /withStoryIllustration\(story, null\)/);
   assert.match(css, /\.story-art\.is-selected/);
   assert.match(css, /\.image-selection-tools\s*\{/);
   assert.match(css, /\.image-replace-button/);
@@ -147,8 +151,8 @@ test("supports newspaper-style copy wrapping around story images", async () => {
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
 
   assert.match(pageSource, /\(story\.illustrationFlow \?\? "wrap"\) === "wrap"/);
-  assert.match(pageSource, /className="newspaper-copy-flow"/);
-  assert.match(pageSource, /className=\{`newspaper-copy-layout image-on-\$\{leadingContentAlignment\}`\}/);
+  assert.match(pageSource, /"newspaper-copy-shell newspaper-copy-flow"/);
+  assert.match(pageSource, /`newspaper-copy-shell newspaper-copy-layout image-on-\$\{leadingContentAlignment\}`/);
   assert.match(pageSource, /leadingContent=\{wrapsWithCopy \? artwork : undefined\}/);
   assert.doesNotMatch(pageSource, /configuredArtScale \* storyBodyColumns/);
   assert.match(editorSource, /Newspaper wrap/);
@@ -158,6 +162,19 @@ test("supports newspaper-style copy wrapping around story images", async () => {
   assert.match(css, /\.newspaper-copy-layout > \.story-art/);
   assert.match(css, /flex:\s*0 0 var\(--art-width\)/);
   assert.match(css, /shape-outside:\s*margin-box/);
+});
+
+test("keeps rendered images as non-draggable story blocks", async () => {
+  const pageSource = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+
+  assert.match(pageSource, /function dataTransferContainsImage/);
+  assert.match(pageSource, /onDragStartCapture=\{\(event\) => \{[\s\S]*event\.preventDefault\(\)/);
+  assert.match(pageSource, /<Image[^>]*draggable=\{false\}[^>]*unoptimized/);
+  assert.match(pageSource, /onDragOver=\{\(event\) => \{[\s\S]*dataTransferContainsImage\(event\.dataTransfer\)/);
+  assert.match(pageSource, /onDrop=\{\(event\) => \{[\s\S]*dataTransferContainsImage\(event\.dataTransfer\)/);
+  assert.match(css, /\.story-art img[\s\S]*-webkit-user-drag:\s*none/);
+  assert.match(css, /\.story-art figcaption[\s\S]*-webkit-user-drag:\s*none/);
 });
 
 test("renders editable footer copy with a homepage link", async () => {

@@ -246,6 +246,39 @@ test("keeps randomized story art rare and usually aligned with flowing text", as
   assert.equal(illustrated.every((story) => story.illustrationFlow === "wrap"), true);
 });
 
+test("adds and removes story images without replacing typography or frame settings", async () => {
+  const { createInitialIssue } = await vite.ssrLoadModule("/lib/news/generator.ts");
+  const { withStoryIllustration } = await vite.ssrLoadModule("/lib/news/story-images.ts");
+  const source = {
+    ...createInitialIssue("image-update-test").stories[1],
+    textStyles: {
+      title: { fontFamily: "Georgia, serif", fontSize: 31, fontStyle: "italic" },
+      body: { fontFamily: "Garamond, serif", fontSize: 11, textAlign: "justify" },
+    },
+    columnSpan: 2,
+    bodyColumns: 2,
+    minHeight: 280,
+    illustrationAlign: "left",
+    illustrationFlow: "block",
+    illustrationScale: 36,
+  };
+  const illustrated = withStoryIllustration(source, "alchemy-flask", () => 0);
+  const restored = withStoryIllustration(illustrated, null);
+  const preservedKeys = [
+    "title", "kicker", "dek", "byline", "location", "body", "kind", "width", "category",
+    "generated", "locked", "bodyMode", "textStyles", "columnSpan", "bodyColumns", "minHeight",
+    "illustrationAlign", "illustrationFlow", "illustrationScale",
+  ];
+
+  assert.notEqual(illustrated, source);
+  for (const key of preservedKeys) assert.deepEqual(illustrated[key], source[key], `${key} changed when adding art`);
+  assert.equal(illustrated.illustrationId, "alchemy-flask");
+  assert.ok(illustrated.illustrationCaption);
+  for (const key of preservedKeys) assert.deepEqual(restored[key], source[key], `${key} changed when removing art`);
+  assert.equal(restored.illustrationId, null);
+  assert.equal(restored.illustrationCaption, "");
+});
+
 test("validates share snapshots and fixes their lifetime at thirty days", async () => {
   const { createInitialIssue } = await vite.ssrLoadModule("/lib/news/generator.ts");
   const { MAX_SNAPSHOT_BYTES, newspaperIssueSchema, SHARE_LIFETIME_MS, snapshotByteLength, uuidPattern } = await vite.ssrLoadModule("/lib/news/sharing.ts");

@@ -642,6 +642,8 @@ button:disabled {
   object-fit: contain;
   filter: grayscale(1) contrast(1.12);
   mix-blend-mode: darken;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .story-art figcaption {
@@ -655,6 +657,8 @@ button:disabled {
   line-height: 1.18;
   text-align: left;
   text-transform: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .art-align-left {

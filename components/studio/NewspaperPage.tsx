@@ -101,6 +101,14 @@ function dropHintLabel(side: DropSide) {
   }
 }
 
+function dataTransferContainsImage(dataTransfer: DataTransfer) {
+  if (Array.from(dataTransfer.items).some((item) => item.kind === "file" && item.type.startsWith("image/"))) {
+    return true;
+  }
+  if (Array.from(dataTransfer.types).includes("text/uri-list")) return true;
+  return /<img\b/i.test(dataTransfer.getData("text/html"));
+}
+
 function useBrowserOwnedEditableHtml(
   value: string,
   html: string,
@@ -321,6 +329,7 @@ function StoryBody({
 
   const body = (
     <div
+      key="story-copy"
       ref={(element) => {
         bodyRef.current = element;
         setElement(isBrowserEditable ? element : null);
@@ -346,6 +355,17 @@ function StoryBody({
       }}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
+      onDragOver={(event) => {
+        if (!dataTransferContainsImage(event.dataTransfer)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "none";
+      }}
+      onDrop={(event) => {
+        if (!dataTransferContainsImage(event.dataTransfer)) return;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
       onBlur={(event) => {
         if (isFitted) return;
         emitChange(event.currentTarget.innerText.trim());
@@ -354,19 +374,14 @@ function StoryBody({
     />
   );
 
-  if (!leadingContent) return body;
-
-  if (usesDedicatedImageColumn) {
-    return (
-      <div className={`newspaper-copy-layout image-on-${leadingContentAlignment}`}>
-        {leadingContent}
-        {body}
-      </div>
-    );
-  }
+  const shellClassName = usesDedicatedImageColumn
+    ? `newspaper-copy-shell newspaper-copy-layout image-on-${leadingContentAlignment}`
+    : leadingContent
+      ? "newspaper-copy-shell newspaper-copy-flow"
+      : "newspaper-copy-shell";
 
   return (
-    <div className="newspaper-copy-flow" style={{ columnCount: bodyColumns }}>
+    <div className={shellClassName} style={leadingContent && !usesDedicatedImageColumn ? { columnCount: bodyColumns } : undefined}>
       {leadingContent}
       {body}
     </div>
@@ -404,7 +419,12 @@ function StoryArtwork({
       style={style}
       title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
       tabIndex={finalized ? undefined : 0}
+      draggable={false}
       aria-label={finalized ? undefined : `Select image for ${story.title}`}
+      onDragStartCapture={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
       onFocus={() => {
         if (!finalized) onSelect();
       }}
@@ -422,7 +442,7 @@ function StoryArtwork({
         }
       }}
     >
-      <Image src={illustration.src} alt={illustration.alt} width={512} height={512} unoptimized />
+      <Image src={illustration.src} alt={illustration.alt} width={512} height={512} draggable={false} unoptimized />
       <figcaption>{story.illustrationCaption || (story.kind === "comic" ? "Editorial cartoon" : illustration.alt)}</figcaption>
       {selected && (
         <span className="image-selection-tools">
@@ -758,6 +778,7 @@ export function NewspaperPage({
           const artStyle = { "--art-width": `${configuredArtScale}%` } as CSSProperties;
           const artwork = illustration ? (
             <StoryArtwork
+              key="story-artwork"
               story={story}
               illustration={illustration}
               alignment={illustrationAlign}

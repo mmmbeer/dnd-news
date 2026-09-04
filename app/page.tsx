@@ -34,8 +34,8 @@ import {
   randomNewspaperName,
   seededRandom,
 } from "@/lib/news/generator";
-import { captionForStory } from "@/lib/news/illustrations";
 import { applyNewspaperPreset } from "@/lib/news/presets";
+import { withStoryIllustration } from "@/lib/news/story-images";
 import {
   isShareReference,
   issueDigest,
@@ -163,24 +163,18 @@ export default function Home() {
   function applyIllustration(illustrationId: string | null) {
     setIssue((current) => ({
       ...current,
-      stories: current.stories.map((story) => story.id === selectedId ? {
-        ...story,
-        illustrationId,
-        illustrationCaption: illustrationId
-          ? captionForStory(illustrationId, story.title, story.location, Math.random)
-          : "",
-      } : story),
+      stories: current.stories.map((story) => (
+        story.id === selectedId ? withStoryIllustration(story, illustrationId) : story
+      )),
     }));
   }
 
   function removeIllustration(id: string) {
     setIssue((current) => ({
       ...current,
-      stories: current.stories.map((story) => story.id === id ? {
-        ...story,
-        illustrationId: null,
-        illustrationCaption: "",
-      } : story),
+      stories: current.stories.map((story) => (
+        story.id === id ? withStoryIllustration(story, null) : story
+      )),
     }));
   }
 
