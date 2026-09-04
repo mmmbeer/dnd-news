@@ -117,3 +117,15 @@ test("serves local newspaper artwork without the unsupported image optimizer", a
     assert.match(imageTag, /\bunoptimized\b/, `${file} would route local artwork through /image`);
   }
 });
+
+test("provides an editing-only image removal control on rendered stories", async () => {
+  const pageSource = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
+  const appSource = await readFile(path.join(root, "app/page.tsx"), "utf8");
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+
+  assert.match(pageSource, /!finalized\s*&&\s*\([\s\S]*className="image-delete-button"/);
+  assert.match(pageSource, /onRemoveImage\(story\.id\)/);
+  assert.match(appSource, /illustrationId:\s*null,\s*illustrationCaption:\s*""/);
+  assert.match(css, /\.image-delete-button\s*\{/);
+  assert.match(css, /@media print[\s\S]*\.image-delete-button/);
+});

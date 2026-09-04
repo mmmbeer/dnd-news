@@ -28,6 +28,7 @@ interface NewspaperPageProps {
   onDelete: (id: string) => void;
   onMove: (from: number, to: number) => void;
   onChooseImage: (id: string) => void;
+  onRemoveImage: (id: string) => void;
   onStoryChange: <K extends keyof NewsStory>(id: string, key: K, value: NewsStory[K]) => void;
   onSettingsChange: <K extends keyof IssueSettings>(key: K, value: IssueSettings[K]) => void;
 }
@@ -192,6 +193,7 @@ export function NewspaperPage({
   onDelete,
   onMove,
   onChooseImage,
+  onRemoveImage,
   onStoryChange,
   onSettingsChange,
 }: NewspaperPageProps) {
@@ -552,6 +554,20 @@ export function NewspaperPage({
                 >
                   <Image src={illustration.src} alt={illustration.alt} width={512} height={512} unoptimized />
                   <figcaption>{story.illustrationCaption || (story.kind === "comic" ? "Editorial cartoon" : illustration.alt)}</figcaption>
+                  {!finalized && (
+                    <button
+                      type="button"
+                      className="image-delete-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRemoveImage(story.id);
+                      }}
+                      aria-label={`Remove image from ${story.title}`}
+                      title="Remove image"
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </button>
+                  )}
                   {!finalized && <button type="button" className="image-resize-handle" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => startImageResize(event, story)} aria-label="Resize image" title="Drag to resize image" />}
                 </figure>
               )}

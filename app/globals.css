@@ -1527,6 +1527,43 @@ button:disabled {
   cursor: nwse-resize;
 }
 
+.image-delete-button {
+  position: absolute;
+  z-index: 10;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(45, 27, 24, 0.5);
+  background: rgba(246, 241, 226, 0.96);
+  color: #5f241f;
+  box-shadow: 0 1px 4px rgba(22, 20, 16, 0.24);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
+}
+
+.image-delete-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.story-art:hover .image-delete-button,
+.story-art:focus-within .image-delete-button,
+.newspaper-story.is-selected .image-delete-button {
+  opacity: 1;
+}
+
+.image-delete-button:hover,
+.image-delete-button:focus-visible {
+  background: #6f2822;
+  color: #fffdf4;
+  opacity: 1;
+}
+
 .is-resizing-layout,
 .is-resizing-layout * {
   cursor: grabbing !important;
@@ -2255,6 +2292,7 @@ button:disabled {
   .story-drag-handle,
   .story-preview-tools,
   .story-resize-handle,
+  .image-delete-button,
   .image-resize-handle {
     display: none !important;
   }

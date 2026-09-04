@@ -145,6 +145,17 @@ export default function Home() {
     }));
   }
 
+  function removeIllustration(id: string) {
+    setIssue((current) => ({
+      ...current,
+      stories: current.stories.map((story) => story.id === id ? {
+        ...story,
+        illustrationId: null,
+        illustrationCaption: "",
+      } : story),
+    }));
+  }
+
   function saveStory(updated: NewsStory) {
     setIssue((current) => ({
       ...current,
@@ -424,6 +435,7 @@ export default function Home() {
                   onDelete={deleteStory}
                   onMove={moveStory}
                   onChooseImage={openImagePicker}
+                  onRemoveImage={removeIllustration}
                   onStoryChange={updateStoryById}
                   onSettingsChange={updateSettings}
                 />
