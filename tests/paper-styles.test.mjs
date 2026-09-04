@@ -112,6 +112,7 @@ test("maps paper age monotonically across 25 weathering overlays", async () => {
 
 test("uses masked raster weathering instead of generated SVG geometry", async () => {
   const source = await readFile(path.join(root, "components/studio/PaperWeatheringOverlay.tsx"), "utf8");
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
   assert.doesNotMatch(source, /<(?:svg|ellipse|path|circle|line)\b/);
   assert.match(source, /maskImage/);
   assert.match(source, /mixBlendMode/);
@@ -123,6 +124,18 @@ test("uses masked raster weathering instead of generated SVG geometry", async ()
   assert.match(source, /width: "100%"/);
   assert.match(source, /height: "100%"/);
   assert.match(source, /objectFit: asset\.kind === "texture" \? "cover" : "contain"/);
+  assert.match(source, /zIndex: -1/);
+  assert.match(css, /\.story-art img\s*\{[\s\S]*?mix-blend-mode:\s*darken/);
+  assert.doesNotMatch(
+    css,
+    /\.newspaper-header,\s*\.newspaper-grid,\s*\.newspaper-footer\s*\{[^}]*z-index/,
+    "content wrappers must not isolate story artwork from the paper backdrop",
+  );
+  assert.doesNotMatch(
+    css,
+    /\.newspaper-story\.is-selected\s*\{[^}]*z-index/,
+    "selecting a story must not isolate its artwork from the paper backdrop",
+  );
 });
 
 test("keeps browser-edited text outside React child reconciliation", async () => {

@@ -123,7 +123,9 @@ export function PaperWeatheringOverlay({
         inset: 0,
         overflow: "hidden",
         pointerEvents: "none",
-        zIndex: 0,
+        // Keep the paper texture behind the copy without isolating the copy
+        // from the page backdrop used by story-art mix-blend-mode.
+        zIndex: -1,
       }}
     >
       {rasters.map((asset, index) => (

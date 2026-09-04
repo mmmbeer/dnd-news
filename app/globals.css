@@ -421,7 +421,6 @@ button:disabled {
 .newspaper-grid,
 .newspaper-footer {
   position: relative;
-  z-index: 1;
 }
 
 .newspaper-page.page-tabloid {
@@ -519,7 +518,6 @@ button:disabled {
 }
 
 .newspaper-story.is-selected {
-  z-index: 2;
   outline: 3px solid rgba(185, 75, 63, 0.72);
   outline-offset: -3px;
   background: rgba(185, 75, 63, 0.045);
