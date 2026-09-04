@@ -1805,6 +1805,85 @@ button:disabled {
   min-height: 320px;
 }
 
+.share-update-choice {
+  display: grid;
+  gap: 20px;
+}
+
+.share-update-choice h3 {
+  margin: 5px 0 8px;
+  color: #f0eee7;
+  font-family: Georgia, serif;
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.share-update-choice p {
+  max-width: 620px;
+  margin: 0;
+  color: #aab0aa;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.share-update-choice code {
+  display: block;
+  overflow: hidden;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px solid #3c433e;
+  background: #151815;
+  color: #b7bdb7;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.share-choice-grid > button {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 10px;
+  padding: 15px;
+  border: 1px solid #444b45;
+  border-radius: 3px;
+  background: #202421;
+  color: #e7e6e0;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.share-choice-grid > button:hover,
+.share-choice-grid > button:focus-visible {
+  border-color: #9c554d;
+  outline: none;
+  background: #292724;
+}
+
+.share-choice-grid svg {
+  width: 20px;
+  height: 20px;
+  grid-row: 1 / span 2;
+  color: #c16b61;
+}
+
+.share-choice-grid strong {
+  font-size: 13px;
+}
+
+.share-choice-grid span {
+  color: #929a93;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .share-dialog-state {
   display: grid;
   justify-items: center;
@@ -2353,6 +2432,10 @@ button:disabled {
   }
 
   .share-result {
+    grid-template-columns: 1fr;
+  }
+
+  .share-choice-grid {
     grid-template-columns: 1fr;
   }
 

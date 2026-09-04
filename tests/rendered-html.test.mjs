@@ -10,4 +10,5 @@ test("builds the newspaper application as a share-capable Worker", async () => {
   assert.match(worker, /async scheduled\(/);
   await access(new URL("../dist/client/favicon.svg", import.meta.url));
   await access(new URL("../drizzle/0000_dashing_albert_cleary.sql", import.meta.url));
+  await access(new URL("../drizzle/0001_share_update_tokens.sql", import.meta.url));
 });

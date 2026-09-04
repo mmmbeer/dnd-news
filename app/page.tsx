@@ -18,7 +18,7 @@ import { ImagePickerDialog } from "@/components/studio/ImagePickerDialog";
 import { NewspaperPage } from "@/components/studio/NewspaperPage";
 import { PdfExportDialog } from "@/components/studio/PdfExportDialog";
 import { StoryEditorDialog } from "@/components/studio/StoryEditorDialog";
-import { ShareNewspaperDialog, type ShareSnapshot } from "@/components/studio/ShareNewspaperDialog";
+import { ShareNewspaperDialog } from "@/components/studio/ShareNewspaperDialog";
 import { StudioSidebar, type StudioTab } from "@/components/studio/StudioSidebar";
 import {
   createBlankStory,
@@ -36,9 +36,18 @@ import {
 } from "@/lib/news/generator";
 import { captionForStory } from "@/lib/news/illustrations";
 import { applyNewspaperPreset } from "@/lib/news/presets";
+import {
+  isShareReference,
+  issueDigest,
+  shareDestination,
+  type ShareAction,
+  type ShareReference,
+  type ShareSnapshot,
+} from "@/lib/news/share-client";
 import type { GeneratorOptions, IssueSettings, NewsStory, NewspaperIssue, NewspaperPresetId } from "@/lib/news/types";
 
 const STORAGE_KEY = "broadsheet:issue:v1";
+const SHARE_STORAGE_KEY = "broadsheet:share:v1";
 
 function nextSeed(seed: string) {
   return `${seed.replace(/-\w{4}$/, "")}-${Math.random().toString(36).slice(2, 6)}`;
@@ -86,6 +95,9 @@ export default function Home() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [shareSnapshot, setShareSnapshot] = useState<ShareSnapshot | null>(null);
+  const [shareReference, setShareReference] = useState<ShareReference | null>(null);
+  const [shareDecisionRequired, setShareDecisionRequired] = useState(false);
+  const [lastShareAction, setLastShareAction] = useState<ShareAction>("create");
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -101,6 +113,11 @@ export default function Home() {
             setSelectedId(restored.stories[0]?.id ?? "");
             setSaveLabel("Saved on this device");
           }
+        }
+        const savedShare = localStorage.getItem(SHARE_STORAGE_KEY);
+        if (savedShare) {
+          const parsedShare = JSON.parse(savedShare);
+          if (isShareReference(parsedShare)) setShareReference(parsedShare);
         }
       } catch {
         setSaveLabel("Sample issue loaded");
@@ -119,6 +136,12 @@ export default function Home() {
     }, 250);
     return () => window.clearTimeout(timeout);
   }, [issue, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (shareReference) localStorage.setItem(SHARE_STORAGE_KEY, JSON.stringify(shareReference));
+    else localStorage.removeItem(SHARE_STORAGE_KEY);
+  }, [shareReference, hydrated]);
 
   const selectedStory = useMemo(
     () => issue.stories.find((story) => story.id === selectedId),
@@ -329,6 +352,8 @@ export default function Home() {
     fresh.settings.newspaperName = randomNewspaperName(seededRandom(fresh.seed));
     setIssue(fresh);
     setSelectedId(fresh.stories[0].id);
+    setShareReference(null);
+    setShareSnapshot(null);
   }
 
   function exportIssue() {
@@ -348,6 +373,8 @@ export default function Home() {
       const restored = normalizeIssue(parsed);
       setIssue(restored);
       setSelectedId(restored.stories[0]?.id ?? "");
+      setShareReference(null);
+      setShareSnapshot(null);
       setSaveLabel("Issue imported");
     } catch {
       setSaveLabel("Could not import that file");
@@ -356,27 +383,70 @@ export default function Home() {
     }
   }
 
-  async function shareIssue() {
+  async function saveSharedIssue(action: ShareAction) {
     const issueSnapshot = issue;
+    const existingReference = shareReference;
     setShareOpen(true);
     setShareLoading(true);
+    setShareDecisionRequired(false);
+    setLastShareAction(action);
     setShareError(null);
     setShareSnapshot(null);
 
     try {
-      const response = await fetch("/api/newspapers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      if (action === "replace" && !existingReference) throw new Error("The earlier share link is no longer available.");
+      const endpoint = action === "replace"
+        ? `/api/newspapers/${encodeURIComponent(existingReference!.id)}`
+        : "/api/newspapers";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (action === "replace") headers["X-Share-Update-Token"] = existingReference!.updateToken;
+
+      const response = await fetch(endpoint, {
+        method: action === "replace" ? "PATCH" : "POST",
+        headers,
         body: JSON.stringify({ issue: issueSnapshot }),
       });
-      const data = await response.json() as ShareSnapshot & { error?: string };
-      if (!response.ok) throw new Error(data.error || "The share link could not be created.");
-      setShareSnapshot({ url: data.url, expiresAt: data.expiresAt });
+      const data = await response.json() as ShareSnapshot & { error?: string; updateToken?: string };
+      if (!response.ok) throw new Error(data.error || "The share link could not be saved.");
+      const updateToken = action === "replace" ? existingReference!.updateToken : data.updateToken;
+      if (!updateToken) throw new Error("The share link was created without update access. Create a new link to continue.");
+      const nextReference: ShareReference = {
+        id: data.id,
+        url: data.url,
+        expiresAt: data.expiresAt,
+        updateToken,
+        issueDigest: await issueDigest(issueSnapshot),
+      };
+      setShareReference(nextReference);
+      setShareSnapshot(nextReference);
     } catch (reason) {
-      setShareError(reason instanceof Error ? reason.message : "The share link could not be created.");
+      setShareError(reason instanceof Error ? reason.message : "The share link could not be saved.");
     } finally {
       setShareLoading(false);
     }
+  }
+
+  async function shareIssue() {
+    const digest = await issueDigest(issue);
+    const destination = shareDestination(shareReference, digest);
+
+    if (destination === "create") {
+      if (shareReference) setShareReference(null);
+      await saveSharedIssue("create");
+      return;
+    }
+
+    setShareOpen(true);
+    setShareLoading(false);
+    setShareError(null);
+    if (destination === "existing") {
+      setShareDecisionRequired(false);
+      setShareSnapshot(shareReference);
+      return;
+    }
+
+    setShareSnapshot(null);
+    setShareDecisionRequired(true);
   }
 
   const rng = () => seededRandom(`${issue.seed}:${Date.now()}`);
@@ -493,8 +563,12 @@ export default function Home() {
           loading={shareLoading}
           error={shareError}
           snapshot={shareSnapshot}
+          decisionRequired={shareDecisionRequired}
+          existingUrl={shareReference?.url ?? null}
           onOpenChange={setShareOpen}
-          onRetry={shareIssue}
+          onRetry={() => saveSharedIssue(lastShareAction)}
+          onCreateNew={() => saveSharedIssue("create")}
+          onReplace={() => saveSharedIssue("replace")}
         />
         {pdfExportOpen && (
           <PdfExportDialog

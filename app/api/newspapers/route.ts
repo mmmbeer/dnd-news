@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getRawDb } from "@/db";
 import {
   MAX_SNAPSHOT_BYTES,
+  hashShareUpdateToken,
   newspaperIssueSchema,
   SHARE_LIFETIME_MS,
   snapshotByteLength,
@@ -37,18 +38,20 @@ export async function POST(request: Request) {
   try {
     const db = getRawDb();
     const id = crypto.randomUUID();
+    const updateToken = crypto.randomUUID();
+    const editTokenHash = await hashShareUpdateToken(updateToken);
     const createdAt = Date.now();
     const expiresAt = createdAt + SHARE_LIFETIME_MS;
 
     await db.batch([
       db.prepare("DELETE FROM newspaper_snapshots WHERE expires_at <= ?").bind(createdAt),
       db.prepare(
-        "INSERT INTO newspaper_snapshots (id, issue_json, created_at, expires_at) VALUES (?, ?, ?, ?)",
-      ).bind(id, issueJson, createdAt, expiresAt),
+        "INSERT INTO newspaper_snapshots (id, issue_json, edit_token_hash, created_at, expires_at) VALUES (?, ?, ?, ?, ?)",
+      ).bind(id, issueJson, editTokenHash, createdAt, expiresAt),
     ]);
 
     const shareUrl = new URL(`/share/${id}`, request.url).toString();
-    return NextResponse.json({ id, url: shareUrl, createdAt, expiresAt }, {
+    return NextResponse.json({ id, url: shareUrl, createdAt, expiresAt, updateToken }, {
       status: 201,
       headers: { "Cache-Control": "private, no-store" },
     });

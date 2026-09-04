@@ -225,13 +225,42 @@ test("validates share snapshots and fixes their lifetime at thirty days", async 
   const issue = createInitialIssue("share-test-seed");
   issue.stories[1].bodyMode = "fit-lorem";
   issue.stories[1].illustrationFlow = "block";
+  issue.settings.textStyles = {
+    newspaperName: { fontFamily: "Georgia, serif", fontSize: 72, textAlign: "center" },
+  };
+  issue.stories[0].textStyles = {
+    title: { fontSize: 61, fontWeight: 700, fontStyle: "italic" },
+    body: { fontSize: 9, textAlign: "justify" },
+  };
 
   assert.equal(newspaperIssueSchema.safeParse(issue).success, true);
-  assert.equal(newspaperIssueSchema.parse(issue).stories[1].bodyMode, "fit-lorem");
-  assert.equal(newspaperIssueSchema.parse(issue).stories[1].illustrationFlow, "block");
+  const parsed = newspaperIssueSchema.parse(issue);
+  assert.equal(parsed.stories[1].bodyMode, "fit-lorem");
+  assert.equal(parsed.stories[1].illustrationFlow, "block");
+  assert.deepEqual(parsed.settings.textStyles, issue.settings.textStyles);
+  assert.deepEqual(parsed.stories[0].textStyles, issue.stories[0].textStyles);
   assert.equal(SHARE_LIFETIME_MS, 30 * 24 * 60 * 60 * 1000);
   assert.ok(snapshotByteLength(JSON.stringify(issue)) < MAX_SNAPSHOT_BYTES);
   assert.equal(uuidPattern.test("96cc8f56-c916-4c84-8bb0-76f7d60c0ef4"), true);
   assert.equal(uuidPattern.test("not-a-share-id"), false);
   assert.equal(newspaperIssueSchema.safeParse({ ...issue, version: 2 }).success, false);
+});
+
+test("distinguishes unchanged, updated and expired share references", async () => {
+  const { createInitialIssue } = await vite.ssrLoadModule("/lib/news/generator.ts");
+  const { issueDigest, shareDestination } = await vite.ssrLoadModule("/lib/news/share-client.ts");
+  const issue = createInitialIssue("share-reference-seed");
+  const digest = await issueDigest(issue);
+  const reference = {
+    id: "96cc8f56-c916-4c84-8bb0-76f7d60c0ef4",
+    url: "https://example.test/share/96cc8f56-c916-4c84-8bb0-76f7d60c0ef4",
+    expiresAt: 2_000,
+    updateToken: "7ecdb76d-e810-4c73-a36a-dcc73bb2d3de",
+    issueDigest: digest,
+  };
+
+  assert.equal(shareDestination(null, digest, 1_000), "create");
+  assert.equal(shareDestination(reference, digest, 1_000), "existing");
+  assert.equal(shareDestination(reference, "changed", 1_000), "decide");
+  assert.equal(shareDestination(reference, digest, 2_000), "create");
 });
