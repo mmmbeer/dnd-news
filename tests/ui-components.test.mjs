@@ -156,6 +156,18 @@ test("supports newspaper-style copy wrapping around story images", async () => {
   assert.match(css, /shape-outside:\s*margin-box/);
 });
 
+test("blends opaque white illustration backgrounds into the selected paper color", async () => {
+  const pageSource = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
+  const weatheringSource = await readFile(path.join(root, "components/studio/PaperWeatheringOverlay.tsx"), "utf8");
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+
+  assert.match(css, /\.story-art img\s*\{[^}]*mix-blend-mode:\s*multiply;/);
+  assert.doesNotMatch(css, /\.story-art img\s*\{[^}]*mix-blend-mode:\s*darken;/);
+  assert.doesNotMatch(css, /\.newspaper-header,\s*\.newspaper-grid,\s*\.newspaper-footer\s*\{[^}]*z-index:/);
+  assert.match(weatheringSource, /zIndex:\s*-1/);
+  assert.match(pageSource, /isolation:\s*isolate|className=\{`newspaper-page/);
+});
+
 test("offers replace or new link after a shared newspaper changes", async () => {
   const appSource = await readFile(path.join(root, "app/page.tsx"), "utf8");
   const dialogSource = await readFile(path.join(root, "components/studio/ShareNewspaperDialog.tsx"), "utf8");
