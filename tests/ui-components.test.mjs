@@ -153,3 +153,16 @@ test("supports newspaper-style copy wrapping around story images", async () => {
   assert.match(css, /\.story-art\.is-copy-wrapped/);
   assert.match(css, /shape-outside:\s*margin-box/);
 });
+
+test("offers replace or new link after a shared newspaper changes", async () => {
+  const appSource = await readFile(path.join(root, "app/page.tsx"), "utf8");
+  const dialogSource = await readFile(path.join(root, "components/studio/ShareNewspaperDialog.tsx"), "utf8");
+  const updateRoute = await readFile(path.join(root, "app/api/newspapers/[id]/route.ts"), "utf8");
+
+  assert.match(appSource, /shareDestination\(shareReference, digest\)/);
+  assert.match(appSource, /method: action === "replace" \? "PATCH" : "POST"/);
+  assert.match(dialogSource, /Replace existing link/);
+  assert.match(dialogSource, /Create a new link/);
+  assert.match(updateRoute, /x-share-update-token/);
+  assert.match(updateRoute, /edit_token_hash = \?/);
+});

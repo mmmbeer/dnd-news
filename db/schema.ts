@@ -5,6 +5,7 @@ export const newspaperSnapshots = sqliteTable(
   {
     id: text("id").primaryKey(),
     issueJson: text("issue_json").notNull(),
+    editTokenHash: text("edit_token_hash"),
     createdAt: integer("created_at").notNull(),
     expiresAt: integer("expires_at").notNull(),
   },

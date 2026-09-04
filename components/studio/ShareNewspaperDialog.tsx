@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Copy, Download, ExternalLink, LoaderCircle, QrCode, RefreshCw, TriangleAlert } from "lucide-react";
+import { Copy, Download, ExternalLink, FilePlus2, LoaderCircle, QrCode, RefreshCw, TriangleAlert } from "lucide-react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
+import type { ShareSnapshot } from "@/lib/news/share-client";
 import {
   Dialog,
   DialogClose,
@@ -15,19 +16,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export interface ShareSnapshot {
-  url: string;
-  expiresAt: number;
-}
-
 interface ShareNewspaperDialogProps {
   open: boolean;
   issueName: string;
   loading: boolean;
   error: string | null;
   snapshot: ShareSnapshot | null;
+  decisionRequired: boolean;
+  existingUrl: string | null;
   onOpenChange: (open: boolean) => void;
   onRetry: () => void;
+  onCreateNew: () => void;
+  onReplace: () => void;
 }
 
 export function ShareNewspaperDialog({
@@ -36,8 +36,12 @@ export function ShareNewspaperDialog({
   loading,
   error,
   snapshot,
+  decisionRequired,
+  existingUrl,
   onOpenChange,
   onRetry,
+  onCreateNew,
+  onReplace,
 }: ShareNewspaperDialogProps) {
   const [qrCode, setQrCode] = useState<{ url: string; dataUrl: string } | null>(null);
   const [copyState, setCopyState] = useState<{ url: string; label: string } | null>(null);
@@ -82,13 +86,38 @@ export function ShareNewspaperDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="studio-dialog share-dialog">
         <DialogHeader className="studio-dialog-header">
-          <DialogTitle>Share finalized newspaper</DialogTitle>
+          <DialogTitle>{decisionRequired ? "Share updated newspaper" : "Share finalized newspaper"}</DialogTitle>
           <DialogDescription>
-            The link opens a read-only copy and expires automatically after 30 days.
+            {decisionRequired
+              ? "Choose what should happen to the edition you shared earlier."
+              : "The link opens a read-only copy and expires automatically after 30 days."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="studio-dialog-body share-dialog-body">
+          {decisionRequired && (
+            <div className="share-update-choice">
+              <div>
+                <span className="eyebrow">Existing shared edition</span>
+                <h3>This newspaper has changed since it was shared.</h3>
+                <p>Replace the existing edition to keep its URL and QR code, or create a new link and leave the earlier edition unchanged.</p>
+                {existingUrl && <code>{existingUrl}</code>}
+              </div>
+              <div className="share-choice-grid">
+                <button type="button" onClick={onReplace}>
+                  <RefreshCw />
+                  <strong>Replace existing link</strong>
+                  <span>Update the current URL and restart its 30-day availability.</span>
+                </button>
+                <button type="button" onClick={onCreateNew}>
+                  <FilePlus2 />
+                  <strong>Create a new link</strong>
+                  <span>Preserve the earlier edition and publish these changes separately.</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {loading && (
             <div className="share-dialog-state" role="status">
               <LoaderCircle className="share-spinner" />
@@ -100,7 +129,7 @@ export function ShareNewspaperDialog({
           {!loading && error && (
             <div className="share-dialog-state share-dialog-error" role="alert">
               <TriangleAlert />
-              <strong>Could not create the share link</strong>
+              <strong>Could not save the share link</strong>
               <span>{error}</span>
               <Button variant="outline" onClick={onRetry}><RefreshCw /> Try again</Button>
             </div>
@@ -118,7 +147,7 @@ export function ShareNewspaperDialog({
               <div className="share-link-panel">
                 <span className="eyebrow">Read-only edition</span>
                 <h3>{issueName}</h3>
-                <p>Anyone with this link can read and print this exact edition. They cannot edit it, and later changes to your issue will not alter this copy.</p>
+                <p>Anyone with this link can read and print this exact edition. They cannot edit it. Later changes will only appear here if you choose to replace this link.</p>
                 <label htmlFor="share-newspaper-url">Share link</label>
                 <div className="share-url-row">
                   <input id="share-newspaper-url" readOnly value={snapshot.url} onFocus={(event) => event.currentTarget.select()} />
@@ -132,7 +161,7 @@ export function ShareNewspaperDialog({
 
         <DialogFooter className="studio-dialog-footer">
           <div className="dialog-footer-secondary">
-            <DialogClose asChild><Button variant="outline">Close</Button></DialogClose>
+            <DialogClose asChild><Button variant="outline">{decisionRequired ? "Cancel" : "Close"}</Button></DialogClose>
             {snapshot && <Button variant="outline" onClick={downloadQrCode} disabled={!qrDataUrl}><Download /> Download QR</Button>}
           </div>
           <div className="dialog-footer-primary">

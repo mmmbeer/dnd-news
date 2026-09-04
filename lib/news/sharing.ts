@@ -3,6 +3,16 @@ import { z } from "zod";
 export const SHARE_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 export const MAX_SNAPSHOT_BYTES = 512 * 1024;
 
+const textRegionStyleSchema = z.object({
+  fontFamily: z.string().max(300).optional(),
+  fontSize: z.number().finite().min(6).max(96).optional(),
+  fontWeight: z.number().finite().min(100).max(900).optional(),
+  fontStyle: z.enum(["normal", "italic"]).optional(),
+  textAlign: z.enum(["left", "center", "right", "justify"]).optional(),
+});
+
+const textRegionStylesSchema = z.record(z.string().min(1).max(120), textRegionStyleSchema);
+
 const storySchema = z.object({
   id: z.string().min(1).max(120),
   title: z.string().max(500),
@@ -21,6 +31,7 @@ const storySchema = z.object({
   illustrationAlign: z.enum(["left", "right", "center"]),
   illustrationFlow: z.enum(["wrap", "block"]).optional(),
   illustrationCaption: z.string().max(1_000).optional(),
+  textStyles: textRegionStylesSchema.optional(),
   columnSpan: z.number().int().min(1).max(5).optional(),
   bodyColumns: z.number().int().min(1).max(5).optional(),
   minHeight: z.number().finite().min(0).max(10_000).optional(),
@@ -50,6 +61,7 @@ const issueSettingsSchema = z.object({
   showRules: z.boolean(),
   justifyText: z.boolean(),
   showDropCaps: z.boolean(),
+  textStyles: textRegionStylesSchema.optional(),
   presetId: z.enum([
     "blackwater",
     "crown-city",
@@ -72,6 +84,11 @@ export const newspaperIssueSchema = z.object({
 });
 
 export const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export async function hashShareUpdateToken(token: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 export function snapshotByteLength(value: string) {
   return new TextEncoder().encode(value).byteLength;
