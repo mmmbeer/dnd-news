@@ -148,11 +148,15 @@ test("supports newspaper-style copy wrapping around story images", async () => {
 
   assert.match(pageSource, /\(story\.illustrationFlow \?\? "wrap"\) === "wrap"/);
   assert.match(pageSource, /className="newspaper-copy-flow"/);
+  assert.match(pageSource, /className=\{`newspaper-copy-layout image-on-\$\{leadingContentAlignment\}`\}/);
   assert.match(pageSource, /leadingContent=\{wrapsWithCopy \? artwork : undefined\}/);
+  assert.doesNotMatch(pageSource, /configuredArtScale \* storyBodyColumns/);
   assert.match(editorSource, /Newspaper wrap/);
   assert.match(editorSource, /Reserved image block/);
   assert.match(sharingSource, /illustrationFlow: z\.enum\(\["wrap", "block"\]\)\.optional\(\)/);
   assert.match(css, /\.story-art\.is-copy-wrapped/);
+  assert.match(css, /\.newspaper-copy-layout > \.story-art/);
+  assert.match(css, /flex:\s*0 0 var\(--art-width\)/);
   assert.match(css, /shape-outside:\s*margin-box/);
 });
 

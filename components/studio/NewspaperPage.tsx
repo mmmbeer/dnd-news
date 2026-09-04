@@ -205,12 +205,14 @@ function StoryBody({
   columns,
   finalized,
   leadingContent,
+  leadingContentAlignment = "left",
   onChange,
 }: {
   story: NewsStory;
   columns: number;
   finalized: boolean;
   leadingContent?: ReactNode;
+  leadingContentAlignment?: "left" | "right";
   onChange: (value: string) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -220,6 +222,7 @@ function StoryBody({
   const renderedBody = isFitted ? fittedBody : story.body;
   const isEmpty = !renderedBody.trim();
   const bodyColumns = storyBodyColumns(story, columns);
+  const usesDedicatedImageColumn = Boolean(leadingContent && bodyColumns > 1);
   const bodyHtml = storyBodyHtml(renderedBody);
   const isBrowserEditable = !finalized && !isFitted;
   const { emitChange, setElement } = useBrowserOwnedEditableHtml(story.body, bodyHtml, onChange);
@@ -322,7 +325,12 @@ function StoryBody({
         setElement(isBrowserEditable ? element : null);
       }}
       className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${isFitted ? "is-auto-fit" : finalized ? "" : "preview-editable"}`.trim()}
-      style={{ columnCount: leadingContent ? undefined : bodyColumns, ...story.textStyles?.body }}
+      style={{
+        columnCount: leadingContent
+          ? usesDedicatedImageColumn ? bodyColumns - 1 : undefined
+          : bodyColumns,
+        ...story.textStyles?.body,
+      }}
       data-placeholder={!finalized && isEmpty ? "Click to add story copy" : undefined}
       data-text-scope="story"
       data-text-key="body"
@@ -346,6 +354,15 @@ function StoryBody({
   );
 
   if (!leadingContent) return body;
+
+  if (usesDedicatedImageColumn) {
+    return (
+      <div className={`newspaper-copy-layout image-on-${leadingContentAlignment}`}>
+        {leadingContent}
+        {body}
+      </div>
+    );
+  }
 
   return (
     <div className="newspaper-copy-flow" style={{ columnCount: bodyColumns }}>
@@ -737,10 +754,7 @@ export function NewspaperPage({
           );
           const configuredArtScale = story.illustrationScale
             ?? (story.kind === "comic" ? 100 : story.kind === "lead" ? 28 : story.width === "wide" ? 32 : 44);
-          const renderedArtScale = wrapsWithCopy
-            ? Math.min(100, configuredArtScale * storyBodyColumns(story, settings.columns))
-            : configuredArtScale;
-          const artStyle = { "--art-width": `${renderedArtScale}%` } as CSSProperties;
+          const artStyle = { "--art-width": `${configuredArtScale}%` } as CSSProperties;
           const artwork = illustration ? (
             <StoryArtwork
               story={story}
@@ -865,6 +879,7 @@ export function NewspaperPage({
                 columns={settings.columns}
                 finalized={finalized}
                 leadingContent={wrapsWithCopy ? artwork : undefined}
+                leadingContentAlignment={illustrationAlign === "right" ? "right" : "left"}
                 onChange={(value) => onStoryChange(story.id, "body", value)}
               />
               {story.kind === "lead" && <div className="continued-mark">Continued inside</div>}

@@ -708,6 +708,29 @@ button:disabled {
   column-rule: 0;
 }
 
+.newspaper-copy-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.newspaper-copy-layout.image-on-right {
+  flex-direction: row-reverse;
+}
+
+.newspaper-copy-layout > .story-art {
+  width: var(--art-width);
+  max-width: none;
+  flex: 0 0 var(--art-width);
+  margin: 4px 0 7px;
+  float: none;
+}
+
+.newspaper-copy-layout > .newspaper-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .story-art.is-copy-wrapped {
   break-inside: avoid;
   shape-outside: margin-box;
