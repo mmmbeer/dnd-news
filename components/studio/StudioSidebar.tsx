@@ -28,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { bodyFontOptions, headlineFontOptions, mastheadFontOptions } from "@/lib/news/fonts";
 import { categoryLabels } from "@/lib/news/generator";
+import { defaultFooter } from "@/lib/news/footer";
 import { colorThemeFor, colorThemeOptions, paperColorOptions } from "@/lib/news/paper-styles";
 import { newspaperPresets } from "@/lib/news/presets";
 import { weatheringLabelForAge } from "@/lib/news/weathering";
@@ -301,6 +302,16 @@ export function StudioSidebar(props: StudioSidebarProps) {
             <SettingSwitch label="Column rules" hint="Separate blocks with hairline rules" checked={settings.showRules} onCheckedChange={(value) => onSettingsChange("showRules", value)} />
             <SettingSwitch label="Justified copy" hint="Square off story columns" checked={settings.justifyText} onCheckedChange={(value) => onSettingsChange("justifyText", value)} />
             <SettingSwitch label="Drop caps" hint="Enlarge the first story letter" checked={settings.showDropCaps} onCheckedChange={(value) => onSettingsChange("showDropCaps", value)} />
+          </section>
+
+          <section className="sidebar-section">
+            <div className="sidebar-section-heading"><span className="eyebrow">Footer</span><h2>Publication credit</h2></div>
+            <Field id="footer-left" label="Left text">
+              <Input id="footer-left" value={settings.footerLeft ?? defaultFooter.left} onChange={(event) => onSettingsChange("footerLeft", event.target.value)} />
+            </Field>
+            <Field id="footer-right" label="Site-link text" hint="This text links back to the Broadsheet home page.">
+              <Input id="footer-right" value={settings.footerRight ?? defaultFooter.linkText} onChange={(event) => onSettingsChange("footerRight", event.target.value)} />
+            </Field>
           </section>
         </TabsContent>
 

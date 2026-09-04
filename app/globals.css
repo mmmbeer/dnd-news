@@ -451,6 +451,17 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.newspaper-footer-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.is-editing .newspaper-footer-link {
+  cursor: text;
+}
+
 .newspaper-header h1 {
   margin: 9px 0 8px;
   color: var(--news-accent);

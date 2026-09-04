@@ -108,6 +108,8 @@ export interface IssueSettings {
   price: string;
   volume: string;
   issueNumber: string;
+  footerLeft?: string;
+  footerRight?: string;
   columns: number;
   pageSize: PageSize;
   mastheadFont: string;

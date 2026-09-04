@@ -76,6 +76,16 @@ test("starts with an editable DM lead placeholder outside the procedural library
   assert.equal(storyTemplates.some((template) => template.id === lead.id), false);
 });
 
+test("starts with editable footer copy and a site credit", async () => {
+  const { createInitialIssue } = await vite.ssrLoadModule("/lib/news/generator.ts");
+  const { defaultFooter } = await vite.ssrLoadModule("/lib/news/footer.ts");
+  const issue = createInitialIssue("footer-test");
+
+  assert.equal(issue.settings.footerLeft, defaultFooter.left);
+  assert.equal(issue.settings.footerRight, defaultFooter.linkText);
+  assert.equal(defaultFooter.linkHref, "/");
+});
+
 test("ships at least one hundred resolvable story templates", async () => {
   const { storyTemplates } = await vite.ssrLoadModule("/lib/news/templates/index.ts");
   const { renderStoryTemplate } = await vite.ssrLoadModule("/lib/news/template-engine.ts");
@@ -254,6 +264,8 @@ test("validates share snapshots and fixes their lifetime at thirty days", async 
   const parsed = newspaperIssueSchema.parse(issue);
   assert.equal(parsed.stories[1].bodyMode, "fit-lorem");
   assert.equal(parsed.stories[1].illustrationFlow, "block");
+  assert.equal(parsed.settings.footerLeft, issue.settings.footerLeft);
+  assert.equal(parsed.settings.footerRight, issue.settings.footerRight);
   assert.deepEqual(parsed.settings.textStyles, issue.settings.textStyles);
   assert.deepEqual(parsed.stories[0].textStyles, issue.stories[0].textStyles);
   assert.equal(SHARE_LIFETIME_MS, 30 * 24 * 60 * 60 * 1000);

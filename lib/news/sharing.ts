@@ -47,6 +47,8 @@ const issueSettingsSchema = z.object({
   price: z.string().max(100),
   volume: z.string().max(100),
   issueNumber: z.string().max(100),
+  footerLeft: z.string().max(500).optional(),
+  footerRight: z.string().max(500).optional(),
   columns: z.number().int().min(2).max(5),
   pageSize: z.enum(["broadsheet", "tabloid", "letter"]),
   mastheadFont: z.string().max(100),

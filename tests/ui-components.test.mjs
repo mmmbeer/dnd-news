@@ -160,6 +160,20 @@ test("supports newspaper-style copy wrapping around story images", async () => {
   assert.match(css, /shape-outside:\s*margin-box/);
 });
 
+test("renders editable footer copy with a homepage link", async () => {
+  const pageSource = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
+  const sidebarSource = await readFile(path.join(root, "components/studio/StudioSidebar.tsx"), "utf8");
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+
+  assert.match(pageSource, /onSettingsChange\("footerLeft", value\)/);
+  assert.match(pageSource, /onSettingsChange\("footerRight", value\)/);
+  assert.match(pageSource, /className="newspaper-footer-link"/);
+  assert.match(pageSource, /href=\{defaultFooter\.linkHref\}/);
+  assert.match(sidebarSource, /id="footer-left"/);
+  assert.match(sidebarSource, /id="footer-right"/);
+  assert.match(css, /\.newspaper-footer-link\s*\{/);
+});
+
 test("offers replace or new link after a shared newspaper changes", async () => {
   const appSource = await readFile(path.join(root, "app/page.tsx"), "utf8");
   const dialogSource = await readFile(path.join(root, "components/studio/ShareNewspaperDialog.tsx"), "utf8");

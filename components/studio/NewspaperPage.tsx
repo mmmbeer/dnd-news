@@ -16,6 +16,7 @@ import { InlineTextFormattingController } from "@/components/studio/InlineTextFo
 import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverlay";
 import { editableTextHtml, storyBodyHtml } from "@/lib/news/editable-html";
 import { fittedLoremBody } from "@/lib/news/fitted-lorem";
+import { defaultFooter } from "@/lib/news/footer";
 import { fontFamilyFor } from "@/lib/news/fonts";
 import { colorThemeFor, paperColorFor } from "@/lib/news/paper-styles";
 import type { NewsStory, NewspaperIssue, IssueSettings, TextRegionStyle } from "@/lib/news/types";
@@ -889,8 +890,28 @@ export function NewspaperPage({
       </main>
 
       <footer className="newspaper-footer">
-        <span>Printed under charter of the Free Press Guild</span>
-        <span>Late notices accepted until third bell</span>
+        <EditableText
+          value={settings.footerLeft ?? defaultFooter.left}
+          finalized={finalized}
+          onChange={(value) => onSettingsChange("footerLeft", value)}
+          textStyle={settings.textStyles?.footerLeft}
+          region={{ scope: "settings", key: "footerLeft", role: "body" }}
+        />
+        <a
+          className="newspaper-footer-link"
+          href={defaultFooter.linkHref}
+          onClickCapture={(event) => {
+            if (!finalized) event.preventDefault();
+          }}
+        >
+          <EditableText
+            value={settings.footerRight ?? defaultFooter.linkText}
+            finalized={finalized}
+            onChange={(value) => onSettingsChange("footerRight", value)}
+            textStyle={settings.textStyles?.footerRight}
+            region={{ scope: "settings", key: "footerRight", role: "body" }}
+          />
+        </a>
       </footer>
       {!finalized && (
         <InlineTextFormattingController

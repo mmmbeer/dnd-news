@@ -1,4 +1,5 @@
 import type { IssueSettings, NewspaperPresetId } from "./types";
+import { defaultFooter } from "./footer";
 
 export interface NewspaperPreset {
   id: NewspaperPresetId;
@@ -15,6 +16,7 @@ export const newspaperPresets: NewspaperPreset[] = [
     settings: {
       presetId: "blackwater", newspaperName: "The Blackwater Chronicle", motto: "An Honest Account of Unquiet Times",
       dateline: "Blackwater & the Western Cantons", edition: "Evening Edition", price: "2 Copper", columns: 4,
+      footerLeft: defaultFooter.left, footerRight: defaultFooter.linkText,
       pageSize: "broadsheet", mastheadFont: "blackletter", headlineFont: "classic", bodyFont: "news", bodySize: 10,
       lineHeight: 1.32, headlineScale: 1, colorTheme: "oxblood", paperColor: "white", paperTone: 35, paperWeathering: true, showRules: false,
       justifyText: true, showDropCaps: true,
@@ -145,6 +147,8 @@ export function applyNewspaperPreset(current: IssueSettings, id: NewspaperPreset
     price: current.price,
     volume: current.volume,
     issueNumber: current.issueNumber,
+    footerLeft: current.footerLeft,
+    footerRight: current.footerRight,
   };
   return { ...current, ...preset.settings, ...identity, presetId: id };
 }

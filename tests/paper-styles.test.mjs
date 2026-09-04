@@ -38,10 +38,12 @@ test("changes template style and layout without replacing newspaper information"
     price: "7 Silver",
     volume: "IX",
     issueNumber: "44",
+    footerLeft: "Printed by the party",
+    footerRight: "Visit our campaign archive",
   };
   const updated = applyNewspaperPreset(current, "frontier");
 
-  for (const key of ["newspaperName", "motto", "publicationDate", "dateline", "edition", "price", "volume", "issueNumber"]) {
+  for (const key of ["newspaperName", "motto", "publicationDate", "dateline", "edition", "price", "volume", "issueNumber", "footerLeft", "footerRight"]) {
     assert.equal(updated[key], current[key], `${key} changed with the template`);
   }
   assert.equal(updated.presetId, "frontier");
