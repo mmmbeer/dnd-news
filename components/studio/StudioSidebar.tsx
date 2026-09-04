@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AlignJustify,
   CalendarDays,
   Copy,
   Download,
@@ -63,6 +64,7 @@ interface StudioSidebarProps {
   onSeedChange: (seed: string) => void;
   onGenerate: () => void;
   onRerollFillers: () => void;
+  onToggleFittedFillers: () => void;
   onRollName: () => void;
   onRollDate: () => void;
   onRollDateline: () => void;
@@ -138,6 +140,7 @@ export function StudioSidebar(props: StudioSidebarProps) {
     onSeedChange,
     onGenerate,
     onRerollFillers,
+    onToggleFittedFillers,
     onRollName,
     onRollDate,
     onRollDateline,
@@ -147,6 +150,9 @@ export function StudioSidebar(props: StudioSidebarProps) {
   } = props;
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const weatheringLabel = weatheringLabelForAge(settings.paperTone);
+  const generatedStories = stories.filter((story) => story.generated && story.kind !== "comic");
+  const allGeneratedBodiesFitted = generatedStories.length > 0
+    && generatedStories.every((story) => story.bodyMode === "fit-lorem");
 
   return (
     <aside className="studio-sidebar" aria-label="Newspaper controls">
@@ -367,6 +373,15 @@ export function StudioSidebar(props: StudioSidebarProps) {
               <Button onClick={onGenerate}><Sparkles /> Add {generatorCount}</Button>
               <Button variant="outline" onClick={onRerollFillers}><RefreshCw /> Reroll filler</Button>
             </div>
+            <Button
+              variant="outline"
+              className="full-button"
+              disabled={!generatedStories.length}
+              onClick={onToggleFittedFillers}
+            >
+              <AlignJustify />
+              {allGeneratedBodiesFitted ? "Restore generated story copy" : "Fit generated bodies with lorem"}
+            </Button>
           </section>
         </TabsContent>
 

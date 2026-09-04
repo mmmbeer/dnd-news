@@ -26,6 +26,7 @@ export type StoryCategory =
 
 export type StoryTone = "straight" | "sensational" | "gossipy" | "ominous";
 export type StoryLength = "brief" | "standard" | "long";
+export type StoryBodyMode = "story" | "fit-lorem";
 export type ColorTheme = "charcoal" | "oxblood" | "navy" | "forest";
 export type PageSize = "broadsheet" | "tabloid" | "letter";
 export type NewspaperPresetId =
@@ -58,6 +59,8 @@ export interface NewsStory {
   byline: string;
   location: string;
   body: string;
+  /** Render the saved story copy or preserve it while fitting lorem ipsum to the story frame. */
+  bodyMode?: StoryBodyMode;
   kind: StoryKind;
   width: StoryWidth;
   category: Exclude<StoryCategory, "any">;

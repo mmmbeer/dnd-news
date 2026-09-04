@@ -100,6 +100,7 @@ export function SharedNewspaperView({ id }: SharedNewspaperViewProps) {
             onDelete={noChange}
             onMove={noChange}
             onChooseImage={noChange}
+            onRemoveImage={noChange}
             onStoryChange={noChange}
             onSettingsChange={noChange}
           />

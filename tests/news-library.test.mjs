@@ -26,6 +26,39 @@ test("ships ten distinct newspaper defaults", async () => {
   assert.ok(newspaperPresets.every((preset) => !preset.settings.showRules));
 });
 
+test("offers a broad medieval Google Fonts catalog including script faces", async () => {
+  const {
+    bodyFontOptions,
+    googleFontStylesheetHref,
+    googleNewspaperFonts,
+    headlineFontOptions,
+    mastheadFontOptions,
+  } = await vite.ssrLoadModule("/lib/news/fonts.ts");
+
+  assert.ok(googleNewspaperFonts.length >= 20);
+  assert.ok(googleNewspaperFonts.filter((font) => font.style === "script").length >= 4);
+  assert.equal(new Set(googleNewspaperFonts.map((font) => font.id)).size, googleNewspaperFonts.length);
+  assert.ok(mastheadFontOptions.length > 30);
+  assert.ok(headlineFontOptions.length > 30);
+  assert.ok(bodyFontOptions.length > 20);
+  assert.match(googleFontStylesheetHref, /^https:\/\/fonts\.googleapis\.com\/css2\?/);
+  assert.match(googleFontStylesheetHref, /family=UnifrakturCook/);
+  assert.match(googleFontStylesheetHref, /family=Bilbo\+Swash\+Caps/);
+});
+
+test("creates deterministic, exact-length lorem copy for fitted story frames", async () => {
+  const { fittedLoremBody } = await vite.ssrLoadModule("/lib/news/fitted-lorem.ts");
+  const first = fittedLoremBody(137, "market-fire");
+  const second = fittedLoremBody(137, "market-fire");
+  const neighboringStory = fittedLoremBody(137, "watch-report");
+
+  assert.equal(first, second);
+  assert.notEqual(first, neighboringStory);
+  assert.equal(first.split(/\s+/).length, 137);
+  assert.ok(first.includes("\n\n"));
+  assert.equal(fittedLoremBody(0, "empty").split(/\s+/).length, 1);
+});
+
 test("ships at least one hundred resolvable story templates", async () => {
   const { storyTemplates } = await vite.ssrLoadModule("/lib/news/templates/index.ts");
   const { renderStoryTemplate } = await vite.ssrLoadModule("/lib/news/template-engine.ts");
@@ -188,8 +221,10 @@ test("validates share snapshots and fixes their lifetime at thirty days", async 
   const { createInitialIssue } = await vite.ssrLoadModule("/lib/news/generator.ts");
   const { MAX_SNAPSHOT_BYTES, newspaperIssueSchema, SHARE_LIFETIME_MS, snapshotByteLength, uuidPattern } = await vite.ssrLoadModule("/lib/news/sharing.ts");
   const issue = createInitialIssue("share-test-seed");
+  issue.stories[1].bodyMode = "fit-lorem";
 
   assert.equal(newspaperIssueSchema.safeParse(issue).success, true);
+  assert.equal(newspaperIssueSchema.parse(issue).stories[1].bodyMode, "fit-lorem");
   assert.equal(SHARE_LIFETIME_MS, 30 * 24 * 60 * 60 * 1000);
   assert.ok(snapshotByteLength(JSON.stringify(issue)) < MAX_SNAPSHOT_BYTES);
   assert.equal(uuidPattern.test("96cc8f56-c916-4c84-8bb0-76f7d60c0ef4"), true);

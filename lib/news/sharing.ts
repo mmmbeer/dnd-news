@@ -11,6 +11,7 @@ const storySchema = z.object({
   byline: z.string().max(300),
   location: z.string().max(300),
   body: z.string().max(80_000),
+  bodyMode: z.enum(["story", "fit-lorem"]).optional(),
   kind: z.enum(["lead", "news", "brief", "notice", "advert", "obituary", "comic"]),
   width: z.enum(["full", "wide", "standard"]),
   category: z.enum(["civic", "guilds", "crime", "arcane", "trade", "travel", "weather", "society", "culture", "adventure", "notices"]),
@@ -44,10 +45,22 @@ const issueSettingsSchema = z.object({
   headlineScale: z.number().finite().min(0.5).max(2),
   colorTheme: z.enum(["charcoal", "oxblood", "navy", "forest"]),
   paperTone: z.number().finite().min(0).max(100),
+  paperWeathering: z.boolean().optional(),
   showRules: z.boolean(),
   justifyText: z.boolean(),
   showDropCaps: z.boolean(),
-  presetId: z.enum(["blackwater", "crown-city", "lantern", "greenway", "adventurer"]),
+  presetId: z.enum([
+    "blackwater",
+    "crown-city",
+    "lantern",
+    "greenway",
+    "adventurer",
+    "silver-quill",
+    "watchman",
+    "mercantile",
+    "arcane-herald",
+    "frontier",
+  ]),
 });
 
 export const newspaperIssueSchema = z.object({

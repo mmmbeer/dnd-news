@@ -60,6 +60,7 @@ function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
     },
     stories: issue.stories.map((story) => ({
       ...story,
+      bodyMode: story.bodyMode === "fit-lorem" ? "fit-lorem" : "story",
       illustrationId: story.illustrationId ?? null,
       illustrationAlign: story.illustrationAlign ?? (story.kind === "comic" ? "center" : story.kind === "lead" ? "left" : "right"),
       illustrationCaption: story.illustrationCaption ?? "",
@@ -242,7 +243,7 @@ export default function Home() {
     setIssue((current) => ({
       ...current,
       seed,
-      stories: current.stories.map((story) => story.id === id ? { ...next, id: story.id } : story),
+      stories: current.stories.map((story) => story.id === id ? { ...next, id: story.id, bodyMode: story.bodyMode } : story),
     }));
   }
 
@@ -271,9 +272,26 @@ export default function Home() {
             category: generator.category === "any" ? story.category : generator.category,
             length: story.kind === "brief" ? "brief" : generator.length,
           }, generatedIndex++);
-        return { ...replacement, id: story.id };
+        return { ...replacement, id: story.id, bodyMode: story.bodyMode };
       }),
     }));
+  }
+
+  function toggleFittedFillers() {
+    setIssue((current) => {
+      const generatedStories = current.stories.filter((story) => story.generated && story.kind !== "comic");
+      const shouldFit = !generatedStories.length
+        ? false
+        : !generatedStories.every((story) => story.bodyMode === "fit-lorem");
+      return {
+        ...current,
+        stories: current.stories.map((story) => (
+          story.generated && story.kind !== "comic"
+            ? { ...story, bodyMode: shouldFit ? "fit-lorem" : "story" }
+            : story
+        )),
+      };
+    });
   }
 
   function rollWholeIssue() {
@@ -285,7 +303,7 @@ export default function Home() {
         const replacement = story.kind === "comic"
           ? generateComic(seed, index)
           : generateStory(seed, { category: "any", tone: generator.tone, length: generator.length }, index);
-        return { ...replacement, id: story.id };
+        return { ...replacement, id: story.id, bodyMode: story.bodyMode };
       });
       return {
         ...current,
@@ -411,6 +429,7 @@ export default function Home() {
             onSeedChange={(seed) => setIssue((current) => ({ ...current, seed }))}
             onGenerate={() => addGenerated()}
             onRerollFillers={rerollFillers}
+            onToggleFittedFillers={toggleFittedFillers}
             onRollName={() => updateSettings("newspaperName", randomNewspaperName(rng()))}
             onRollDate={() => updateSettings("publicationDate", randomDate(rng()))}
             onRollDateline={() => updateSettings("dateline", `${randomLocation(rng())} & the surrounding provinces`)}

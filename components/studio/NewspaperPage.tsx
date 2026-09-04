@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useLayoutEffect,
   useRef,
   useState,
@@ -13,6 +14,7 @@ import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
 import { InlineTextFormattingController } from "@/components/studio/InlineTextFormattingController";
 import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverlay";
 import { editableTextHtml, storyBodyHtml } from "@/lib/news/editable-html";
+import { fittedLoremBody } from "@/lib/news/fitted-lorem";
 import { fontFamilyFor } from "@/lib/news/fonts";
 import type { NewsStory, NewspaperIssue, IssueSettings, TextRegionStyle } from "@/lib/news/types";
 import { illustrationById } from "@/lib/news/illustrations";
@@ -159,27 +161,126 @@ function EditableText({
 }
 
 function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; columns: number; finalized: boolean; onChange: (value: string) => void }) {
-  const isEmpty = !story.body.trim();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const targetHeightRef = useRef<number | null>(null);
+  const [fittedBody, setFittedBody] = useState(story.body);
+  const isFitted = story.kind !== "comic" && story.bodyMode === "fit-lorem";
+  const renderedBody = isFitted ? fittedBody : story.body;
+  const isEmpty = !renderedBody.trim();
   const bodyColumns = storyBodyColumns(story, columns);
+
+  const fitBody = useCallback(() => {
+    if (!isFitted) return;
+    const body = bodyRef.current;
+    const article = body?.closest<HTMLElement>(".newspaper-story");
+    const page = article?.closest<HTMLElement>(".newspaper-page");
+    if (!body || !article || !page || article.offsetWidth < 1) return;
+
+    if (targetHeightRef.current === null) targetHeightRef.current = article.offsetHeight;
+    const targetHeight = Math.max(60, story.minHeight ?? targetHeightRef.current);
+    const measurement = article.cloneNode(true) as HTMLElement;
+    measurement.classList.remove("is-selected");
+    measurement.setAttribute("aria-hidden", "true");
+    measurement.querySelectorAll(".story-drag-handle, .story-preview-tools, .story-resize-handle, .image-resize-handle").forEach((element) => element.remove());
+    Object.assign(measurement.style, {
+      position: "absolute",
+      inset: "0 auto auto 0",
+      zIndex: "-1",
+      visibility: "hidden",
+      pointerEvents: "none",
+      width: `${article.offsetWidth}px`,
+      height: "auto",
+      minHeight: "0",
+      maxHeight: "none",
+      gridColumn: "auto",
+      gridRowEnd: "auto",
+      opacity: "0",
+    });
+    const measurementBody = measurement.querySelector<HTMLElement>(".newspaper-copy");
+    if (!measurementBody) return;
+    measurementBody.removeAttribute("contenteditable");
+    page.appendChild(measurement);
+
+    const measuredHeight = (words: number) => {
+      measurementBody.innerHTML = storyBodyHtml(fittedLoremBody(words, story.id));
+      return measurement.offsetHeight;
+    };
+
+    let lower = 1;
+    let upper = 64;
+    while (upper < 4096 && measuredHeight(upper) <= targetHeight) {
+      lower = upper;
+      upper *= 2;
+    }
+
+    while (lower + 1 < upper) {
+      const middle = Math.floor((lower + upper) / 2);
+      if (measuredHeight(middle) <= targetHeight) lower = middle;
+      else upper = middle;
+    }
+
+    const nextBody = fittedLoremBody(lower, story.id);
+    measurement.remove();
+    setFittedBody((current) => current === nextBody ? current : nextBody);
+  }, [isFitted, story.id, story.minHeight]);
+
+  useLayoutEffect(() => {
+    if (!isFitted) {
+      targetHeightRef.current = null;
+      return;
+    }
+
+    const body = bodyRef.current;
+    const article = body?.closest<HTMLElement>(".newspaper-story");
+    if (!article) return;
+    let animationFrame = window.requestAnimationFrame(fitBody);
+    const scheduleFit = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(fitBody);
+    };
+    const observer = new ResizeObserver(scheduleFit);
+    observer.observe(article);
+    document.fonts?.ready.then(scheduleFit);
+
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [
+    bodyColumns,
+    columns,
+    fitBody,
+    isFitted,
+    story.columnSpan,
+    story.illustrationAlign,
+    story.illustrationId,
+    story.illustrationScale,
+    story.textStyles,
+    story.width,
+  ]);
+
   return (
     <div
-      className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${finalized ? "" : "preview-editable"}`.trim()}
+      ref={bodyRef}
+      className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${isFitted ? "is-auto-fit" : finalized ? "" : "preview-editable"}`.trim()}
       style={{ columnCount: bodyColumns, ...story.textStyles?.body }}
       data-placeholder={!finalized && isEmpty ? "Click to add story copy" : undefined}
       data-text-scope="story"
       data-text-key="body"
       data-text-role="body"
       data-story-id={story.id}
-      contentEditable={!finalized}
+      contentEditable={!finalized && !isFitted}
       suppressContentEditableWarning
-      spellCheck={!finalized}
+      spellCheck={!finalized && !isFitted}
+      title={isFitted ? "Automatically fitted lorem ipsum. The original story copy is preserved." : undefined}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       onBlur={(event) => {
+        if (isFitted) return;
         const next = event.currentTarget.innerText.trim();
         if (next !== story.body) onChange(next);
       }}
-      dangerouslySetInnerHTML={{ __html: storyBodyHtml(story.body) }}
+      dangerouslySetInnerHTML={{ __html: storyBodyHtml(renderedBody) }}
     />
   );
 }

@@ -158,6 +158,20 @@ export function StoryEditorDialog({
             <Textarea id="story-body" className="story-body-input" value={draft.body} rows={12} onChange={(event) => change("body", event.target.value)} />
           </Field>
 
+          {draft.generated && draft.kind !== "comic" && (
+            <div className="switch-row compact">
+              <span>
+                <strong>Auto-fit lorem body</strong>
+                <small>Fill this story’s current height and width with lorem ipsum. The generated article remains saved.</small>
+              </span>
+              <Switch
+                checked={draft.bodyMode === "fit-lorem"}
+                onCheckedChange={(value) => change("bodyMode", value ? "fit-lorem" : "story")}
+                aria-label="Auto-fit lorem body"
+              />
+            </div>
+          )}
+
           <div className="story-editor-art">
             <div className="inspector-divider"><span>Featured image</span></div>
             {artwork ? (

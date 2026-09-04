@@ -28,9 +28,9 @@ test("offers ten newspaper templates including the five extended presets", async
 
 test("exposes expanded masthead, headline and body font families", async () => {
   const { mastheadFontOptions, headlineFontOptions, bodyFontOptions, fontFamilyFor } = await vite.ssrLoadModule("/lib/news/fonts.ts");
-  assert.equal(mastheadFontOptions.length, 10);
-  assert.equal(headlineFontOptions.length, 10);
-  assert.equal(bodyFontOptions.length, 10);
+  assert.ok(mastheadFontOptions.length >= 30);
+  assert.ok(headlineFontOptions.length >= 30);
+  assert.ok(bodyFontOptions.length >= 20);
   assert.match(fontFamilyFor("masthead", "didone"), /Bodoni|Didot/);
   assert.match(fontFamilyFor("body", "typewriter"), /Courier/);
 });
