@@ -118,14 +118,21 @@ test("serves local newspaper artwork without the unsupported image optimizer", a
   }
 });
 
-test("provides an editing-only image removal control on rendered stories", async () => {
+test("selects rendered images before offering replace and remove controls", async () => {
   const pageSource = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
   const appSource = await readFile(path.join(root, "app/page.tsx"), "utf8");
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
 
-  assert.match(pageSource, /!finalized\s*&&\s*\([\s\S]*className="image-delete-button"/);
+  assert.match(pageSource, /const \[selectedImageId, setSelectedImageId\]/);
+  assert.match(pageSource, /onClick=\{\(event\) => \{[\s\S]*setSelectedImageId\(story\.id\);[\s\S]*onSelect\(story\.id\)/);
+  assert.match(pageSource, /isImageSelected\s*&&\s*\([\s\S]*className="image-replace-button"/);
+  assert.match(pageSource, /className="image-replace-button"[\s\S]*onChooseImage\(story\.id\)/);
+  assert.match(pageSource, /className="image-delete-button"[\s\S]*onRemoveImage\(story\.id\)/);
   assert.match(pageSource, /onRemoveImage\(story\.id\)/);
   assert.match(appSource, /illustrationId:\s*null,\s*illustrationCaption:\s*""/);
+  assert.match(css, /\.story-art\.is-selected/);
+  assert.match(css, /\.image-selection-tools\s*\{/);
+  assert.match(css, /\.image-replace-button/);
   assert.match(css, /\.image-delete-button\s*\{/);
-  assert.match(css, /@media print[\s\S]*\.image-delete-button/);
+  assert.match(css, /@media print[\s\S]*\.image-selection-tools/);
 });

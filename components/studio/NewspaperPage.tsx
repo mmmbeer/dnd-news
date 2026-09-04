@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import Image from "next/image";
-import { Edit3, Grip, ImageIcon, Trash2 } from "lucide-react";
+import { Edit3, Grip, ImageIcon, RefreshCw, Trash2 } from "lucide-react";
 import { InlineTextFormattingController } from "@/components/studio/InlineTextFormattingController";
 import { PaperWeatheringOverlay } from "@/components/studio/PaperWeatheringOverlay";
 import { editableTextHtml, storyBodyHtml } from "@/lib/news/editable-html";
@@ -354,6 +354,7 @@ export function NewspaperPage({
   const { settings } = issue;
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dropHint, setDropHint] = useState<DropHint | null>(null);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const gridRef = useRef<HTMLElement | null>(null);
   const storyElements = useRef(new Map<string, HTMLElement>());
   const [storyRows, setStoryRows] = useState<Record<string, number>>({});
@@ -597,6 +598,7 @@ export function NewspaperPage({
           const isDragged = draggedIndex === originalIndex;
           const isDropTarget = draggedIndex !== null && dropHint?.targetId === story.id;
           const validDropTarget = isDropTarget && dropHint?.valid;
+          const isImageSelected = !finalized && selectedImageId === story.id;
           const storyStyle = {
             gridColumn: `span ${span}`,
             gridRowEnd: storyRows[story.id] ? `span ${storyRows[story.id]}` : undefined,
@@ -625,8 +627,16 @@ export function NewspaperPage({
               }}
               className={`newspaper-story story-${story.kind} story-${story.width} ${!finalized && selectedId === story.id ? "is-selected" : ""}`}
               style={storyStyle}
-              onClick={() => !finalized && onSelect(story.id)}
-              onFocusCapture={() => !finalized && onSelect(story.id)}
+              onClick={() => {
+                if (finalized) return;
+                setSelectedImageId(null);
+                onSelect(story.id);
+              }}
+              onFocusCapture={(event) => {
+                if (finalized) return;
+                if (!(event.target as Element).closest(".story-art")) setSelectedImageId(null);
+                onSelect(story.id);
+              }}
               tabIndex={finalized ? undefined : 0}
               onKeyDown={(event) => {
                 if (!finalized && (event.key === "Enter" || event.key === " ")) onSelect(story.id);
@@ -702,26 +712,63 @@ export function NewspaperPage({
               )}
               {illustration && (
                 <figure
-                  className={`story-art story-art-${illustration.kind} art-align-${illustrationAlign}`}
+                  className={`story-art story-art-${illustration.kind} art-align-${illustrationAlign} ${isImageSelected ? "is-selected" : ""}`.trim()}
                   style={artStyle}
                   title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
-                  onClick={(event) => { if (!finalized) { event.stopPropagation(); onChooseImage(story.id); } }}
+                  tabIndex={finalized ? undefined : 0}
+                  aria-label={finalized ? undefined : `Select image for ${story.title}`}
+                  onFocus={() => {
+                    if (!finalized) {
+                      setSelectedImageId(story.id);
+                      onSelect(story.id);
+                    }
+                  }}
+                  onClick={(event) => {
+                    if (!finalized) {
+                      event.stopPropagation();
+                      setSelectedImageId(story.id);
+                      onSelect(story.id);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (!finalized && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setSelectedImageId(story.id);
+                      onSelect(story.id);
+                    }
+                  }}
                 >
                   <Image src={illustration.src} alt={illustration.alt} width={512} height={512} unoptimized />
                   <figcaption>{story.illustrationCaption || (story.kind === "comic" ? "Editorial cartoon" : illustration.alt)}</figcaption>
-                  {!finalized && (
-                    <button
-                      type="button"
-                      className="image-delete-button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onRemoveImage(story.id);
-                      }}
-                      aria-label={`Remove image from ${story.title}`}
-                      title="Remove image"
-                    >
-                      <Trash2 aria-hidden="true" />
-                    </button>
+                  {isImageSelected && (
+                    <span className="image-selection-tools">
+                      <button
+                        type="button"
+                        className="image-replace-button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onChooseImage(story.id);
+                        }}
+                        aria-label={`Replace image for ${story.title}`}
+                        title="Replace image"
+                      >
+                        <RefreshCw aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className="image-delete-button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedImageId(null);
+                          onRemoveImage(story.id);
+                        }}
+                        aria-label={`Remove image from ${story.title}`}
+                        title="Remove image"
+                      >
+                        <Trash2 aria-hidden="true" />
+                      </button>
+                    </span>
                   )}
                   {!finalized && <button type="button" className="image-resize-handle" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => startImageResize(event, story)} aria-label="Resize image" title="Drag to resize image" />}
                 </figure>

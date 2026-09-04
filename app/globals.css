@@ -1518,6 +1518,11 @@ button:disabled {
   cursor: pointer;
 }
 
+.is-editing .story-art.is-selected {
+  outline: 2px solid color-mix(in srgb, var(--news-accent) 76%, white);
+  outline-offset: 2px;
+}
+
 .image-resize-handle {
   right: -5px;
   bottom: 13px;
@@ -1527,41 +1532,47 @@ button:disabled {
   cursor: nwse-resize;
 }
 
-.image-delete-button {
+.image-selection-tools {
   position: absolute;
   z-index: 10;
   top: 3px;
   right: 3px;
+  display: flex;
+  border: 1px solid rgba(45, 27, 24, 0.5);
+  background: rgba(246, 241, 226, 0.96);
+  box-shadow: 0 1px 4px rgba(22, 20, 16, 0.24);
+}
+
+.image-replace-button,
+.image-delete-button {
   display: grid;
   width: 20px;
   height: 20px;
   padding: 0;
   place-items: center;
-  border: 1px solid rgba(45, 27, 24, 0.5);
-  background: rgba(246, 241, 226, 0.96);
+  border: 0;
+  background: transparent;
   color: #5f241f;
-  box-shadow: 0 1px 4px rgba(22, 20, 16, 0.24);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
+  transition: background 100ms ease, color 100ms ease;
 }
 
+.image-replace-button {
+  border-right: 1px solid rgba(45, 27, 24, 0.22);
+}
+
+.image-replace-button svg,
 .image-delete-button svg {
   width: 12px;
   height: 12px;
 }
 
-.story-art:hover .image-delete-button,
-.story-art:focus-within .image-delete-button,
-.newspaper-story.is-selected .image-delete-button {
-  opacity: 1;
-}
-
+.image-replace-button:hover,
+.image-replace-button:focus-visible,
 .image-delete-button:hover,
 .image-delete-button:focus-visible {
   background: #6f2822;
   color: #fffdf4;
-  opacity: 1;
 }
 
 .is-resizing-layout,
@@ -1751,6 +1762,8 @@ button:disabled {
 .is-pdf-exporting .story-drag-handle,
 .is-pdf-exporting .story-preview-tools,
 .is-pdf-exporting .story-resize-handle,
+.is-pdf-exporting .image-selection-tools,
+.is-pdf-exporting .image-replace-button,
 .is-pdf-exporting .image-delete-button,
 .is-pdf-exporting .image-resize-handle,
 .is-pdf-exporting .inline-text-toolbar {
@@ -2408,6 +2421,8 @@ button:disabled {
   .story-drag-handle,
   .story-preview-tools,
   .story-resize-handle,
+  .image-selection-tools,
+  .image-replace-button,
   .image-delete-button,
   .image-resize-handle {
     display: none !important;
