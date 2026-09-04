@@ -28,7 +28,26 @@ export type StoryCategory =
 export type StoryTone = "straight" | "sensational" | "gossipy" | "ominous";
 export type StoryLength = "brief" | "standard" | "long";
 export type StoryBodyMode = "story" | "fit-lorem";
-export type ColorTheme = "charcoal" | "oxblood" | "navy" | "forest";
+export type ColorTheme =
+  | "charcoal"
+  | "oxblood"
+  | "rust"
+  | "sepia"
+  | "navy"
+  | "royal"
+  | "plum"
+  | "forest"
+  | "teal"
+  | "olive";
+export type PaperColor =
+  | "white"
+  | "ivory"
+  | "parchment"
+  | "aged-parchment"
+  | "mist-gray"
+  | "newsprint"
+  | "silver-gray"
+  | "ash-gray";
 export type PageSize = "broadsheet" | "tabloid" | "letter";
 export type NewspaperPresetId =
   | "blackwater"
@@ -98,6 +117,7 @@ export interface IssueSettings {
   lineHeight: number;
   headlineScale: number;
   colorTheme: ColorTheme;
+  paperColor: PaperColor;
   paperTone: number;
   paperWeathering: boolean;
   showRules: boolean;

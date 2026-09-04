@@ -411,10 +411,17 @@ button:disabled {
   padding: 42px 46px 32px;
   isolation: isolate;
   background:
-    linear-gradient(90deg, rgba(74, 61, 39, 0.025), transparent 14%, transparent 86%, rgba(74, 61, 39, 0.025)),
+    linear-gradient(90deg, var(--news-paper-edge), transparent 14%, transparent 86%, var(--news-paper-edge)),
     var(--news-paper);
   color: #171714;
   box-shadow: 0 22px 52px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.newspaper-header,
+.newspaper-grid,
+.newspaper-footer {
+  position: relative;
+  z-index: 1;
 }
 
 .newspaper-page.page-tabloid {
@@ -1072,11 +1079,6 @@ button:disabled {
   font-weight: 800;
 }
 
-.preset-charcoal { --preset-accent: #85857f; }
-.preset-oxblood { --preset-accent: #b94b50; }
-.preset-navy { --preset-accent: #587da1; }
-.preset-forest { --preset-accent: #4d8a69; }
-
 .illustration-picker {
   display: grid;
   gap: 7px;
@@ -1090,7 +1092,7 @@ button:disabled {
 
 .swatch-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
@@ -1106,10 +1108,45 @@ button:disabled {
   outline: 2px solid #f0eee7;
 }
 
-.swatch-charcoal { background: #20201e; }
-.swatch-oxblood { background: #721c24; }
-.swatch-navy { background: #193451; }
-.swatch-forest { background: #214c3a; }
+.paper-swatch-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.paper-color-option {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid #444a45;
+  border-radius: 2px;
+  background: #1d211e;
+  color: #b9beb9;
+  font-size: 9px;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.paper-color-option:hover {
+  border-color: #707770;
+  background: #252a26;
+}
+
+.paper-color-option.is-active {
+  border-color: #e1e2db;
+  color: #f0f0ea;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.paper-color-swatch {
+  width: 22px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(20, 22, 20, 0.14);
+}
 
 .full-button {
   width: 100%;
@@ -2513,8 +2550,10 @@ button:disabled {
     width: 100%;
     min-height: 0;
     padding: 0;
-    background: white;
+    background: var(--news-paper);
     box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .newspaper-story,

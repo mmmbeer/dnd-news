@@ -26,6 +26,43 @@ test("offers ten newspaper templates including the five extended presets", async
   }
 });
 
+test("changes template style and layout without replacing newspaper information", async () => {
+  const { applyNewspaperPreset, getNewspaperPreset } = await vite.ssrLoadModule("/lib/news/presets.ts");
+  const current = {
+    ...getNewspaperPreset("blackwater").settings,
+    newspaperName: "The User's Gazette",
+    motto: "Facts Before Breakfast",
+    publicationDate: "4 Emberfall",
+    dateline: "Orlumbor and the Moonshae Isles",
+    edition: "Dragon Extra",
+    price: "7 Silver",
+    volume: "IX",
+    issueNumber: "44",
+  };
+  const updated = applyNewspaperPreset(current, "frontier");
+
+  for (const key of ["newspaperName", "motto", "publicationDate", "dateline", "edition", "price", "volume", "issueNumber"]) {
+    assert.equal(updated[key], current[key], `${key} changed with the template`);
+  }
+  assert.equal(updated.presetId, "frontier");
+  assert.equal(updated.columns, 3);
+  assert.equal(updated.pageSize, "letter");
+  assert.equal(updated.paperColor, "parchment");
+});
+
+test("offers expanded ink and paper palettes with balanced weathering profiles", async () => {
+  const { colorThemeOptions, paperColorOptions, paperColorFor } = await vite.ssrLoadModule("/lib/news/paper-styles.ts");
+  assert.equal(colorThemeOptions.length, 10);
+  assert.equal(new Set(colorThemeOptions.map((option) => option.id)).size, colorThemeOptions.length);
+  assert.equal(paperColorOptions.length, 8);
+  assert.equal(paperColorFor(undefined).id, "white");
+  assert.equal(paperColorOptions[0].id, "white");
+  assert.ok(paperColorOptions.some((option) => option.id === "parchment"));
+  assert.ok(paperColorOptions.filter((option) => option.id.includes("gray") || option.id === "newsprint").length >= 4);
+  assert.ok(paperColorOptions.every((option) => option.weatheringOpacity > 0 && option.weatheringOpacity <= 1));
+  assert.ok(paperColorOptions.every((option) => option.weatheringSaturation > 0 && option.weatheringSaturation <= 1));
+});
+
 test("exposes expanded masthead, headline and body font families", async () => {
   const { mastheadFontOptions, headlineFontOptions, bodyFontOptions, fontFamilyFor } = await vite.ssrLoadModule("/lib/news/fonts.ts");
   assert.ok(mastheadFontOptions.length >= 30);
@@ -71,6 +108,8 @@ test("uses masked raster weathering instead of generated SVG geometry", async ()
   assert.match(source, /maskImage/);
   assert.match(source, /mixBlendMode/);
   assert.match(source, /data-weathering-effect/);
+  assert.match(source, /opacityScale/);
+  assert.match(source, /saturate\(\$\{saturation\}\)/);
 });
 
 test("keeps browser-edited text outside React child reconciliation", async () => {

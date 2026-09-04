@@ -24,6 +24,7 @@ test("ships ten distinct newspaper defaults", async () => {
   assert.equal(new Set(newspaperPresets.map((preset) => preset.id)).size, 10);
   assert.equal(new Set(newspaperPresets.map((preset) => preset.settings.newspaperName)).size, 10);
   assert.ok(newspaperPresets.every((preset) => !preset.settings.showRules));
+  assert.equal(newspaperPresets[0].settings.paperColor, "white");
 });
 
 test("offers a broad medieval Google Fonts catalog including script faces", async () => {
