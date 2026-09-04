@@ -124,10 +124,11 @@ test("selects rendered images before offering replace and remove controls", asyn
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
 
   assert.match(pageSource, /const \[selectedImageId, setSelectedImageId\]/);
-  assert.match(pageSource, /onClick=\{\(event\) => \{[\s\S]*setSelectedImageId\(story\.id\);[\s\S]*onSelect\(story\.id\)/);
-  assert.match(pageSource, /isImageSelected\s*&&\s*\([\s\S]*className="image-replace-button"/);
-  assert.match(pageSource, /className="image-replace-button"[\s\S]*onChooseImage\(story\.id\)/);
-  assert.match(pageSource, /className="image-delete-button"[\s\S]*onRemoveImage\(story\.id\)/);
+  assert.match(pageSource, /function StoryArtwork/);
+  assert.match(pageSource, /onSelect=\{\(\) => \{[\s\S]*setSelectedImageId\(story\.id\);[\s\S]*onSelect\(story\.id\)/);
+  assert.match(pageSource, /selected\s*&&\s*\([\s\S]*className="image-replace-button"/);
+  assert.match(pageSource, /className="image-replace-button"[\s\S]*onReplace\(\)/);
+  assert.match(pageSource, /className="image-delete-button"[\s\S]*onRemove\(\)/);
   assert.match(pageSource, /onRemoveImage\(story\.id\)/);
   assert.match(appSource, /illustrationId:\s*null,\s*illustrationCaption:\s*""/);
   assert.match(css, /\.story-art\.is-selected/);
@@ -135,4 +136,20 @@ test("selects rendered images before offering replace and remove controls", asyn
   assert.match(css, /\.image-replace-button/);
   assert.match(css, /\.image-delete-button\s*\{/);
   assert.match(css, /@media print[\s\S]*\.image-selection-tools/);
+});
+
+test("supports newspaper-style copy wrapping around story images", async () => {
+  const pageSource = await readFile(path.join(root, "components/studio/NewspaperPage.tsx"), "utf8");
+  const editorSource = await readFile(path.join(root, "components/studio/StoryEditorDialog.tsx"), "utf8");
+  const sharingSource = await readFile(path.join(root, "lib/news/sharing.ts"), "utf8");
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+
+  assert.match(pageSource, /\(story\.illustrationFlow \?\? "wrap"\) === "wrap"/);
+  assert.match(pageSource, /className="newspaper-copy-flow"/);
+  assert.match(pageSource, /leadingContent=\{wrapsWithCopy \? artwork : undefined\}/);
+  assert.match(editorSource, /Newspaper wrap/);
+  assert.match(editorSource, /Reserved image block/);
+  assert.match(sharingSource, /illustrationFlow: z\.enum\(\["wrap", "block"\]\)\.optional\(\)/);
+  assert.match(css, /\.story-art\.is-copy-wrapped/);
+  assert.match(css, /shape-outside:\s*margin-box/);
 });

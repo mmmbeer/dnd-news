@@ -115,6 +115,7 @@ function generateStoryFromTemplate(
     locked: false,
     illustrationId,
     illustrationAlign: randomIllustrationAlignment(rng),
+    illustrationFlow: "wrap",
     illustrationCaption: illustrationId
       ? captionForStory(illustrationId, copy.title, copy.primaryLocation, rng)
       : undefined,
@@ -156,6 +157,7 @@ export function generateComic(seed: string, index = 0): NewsStory {
     locked: false,
     illustrationId,
     illustrationAlign: "center",
+    illustrationFlow: "block",
     illustrationCaption: "Editorial cartoon",
   };
 }
@@ -181,6 +183,7 @@ export function createBlankStory(): NewsStory {
     locked: true,
     illustrationId: null,
     illustrationAlign: "right",
+    illustrationFlow: "wrap",
     illustrationCaption: "",
   };
 }
@@ -204,6 +207,7 @@ export function createInitialIssue(seed = "blackwater-press"): NewspaperIssue {
     locked: true,
     illustrationId: "dungeon-stairs",
     illustrationAlign: "left",
+    illustrationFlow: "wrap",
     illustrationCaption: "The drowned chapel steps beneath Blackwater, from an artist's reconstruction.",
   };
 

@@ -189,6 +189,7 @@ test("generates public-domain cartoons as standalone one-column comics", async (
     assert.equal(comic.body, "");
     assert.equal(illustrationById.get(comic.illustrationId)?.kind, "cartoon");
     assert.equal(comic.illustrationAlign, "center");
+    assert.equal(comic.illustrationFlow, "block");
   }
 
   const initialIssue = createInitialIssue();
@@ -215,6 +216,7 @@ test("keeps randomized story art rare and usually aligned with flowing text", as
 
   assert.ok(illustrated.length >= 70 && illustrated.length <= 150);
   assert.ok(floated.length / illustrated.length >= 0.85);
+  assert.equal(illustrated.every((story) => story.illustrationFlow === "wrap"), true);
 });
 
 test("validates share snapshots and fixes their lifetime at thirty days", async () => {
@@ -222,9 +224,11 @@ test("validates share snapshots and fixes their lifetime at thirty days", async 
   const { MAX_SNAPSHOT_BYTES, newspaperIssueSchema, SHARE_LIFETIME_MS, snapshotByteLength, uuidPattern } = await vite.ssrLoadModule("/lib/news/sharing.ts");
   const issue = createInitialIssue("share-test-seed");
   issue.stories[1].bodyMode = "fit-lorem";
+  issue.stories[1].illustrationFlow = "block";
 
   assert.equal(newspaperIssueSchema.safeParse(issue).success, true);
   assert.equal(newspaperIssueSchema.parse(issue).stories[1].bodyMode, "fit-lorem");
+  assert.equal(newspaperIssueSchema.parse(issue).stories[1].illustrationFlow, "block");
   assert.equal(SHARE_LIFETIME_MS, 30 * 24 * 60 * 60 * 1000);
   assert.ok(snapshotByteLength(JSON.stringify(issue)) < MAX_SNAPSHOT_BYTES);
   assert.equal(uuidPattern.test("96cc8f56-c916-4c84-8bb0-76f7d60c0ef4"), true);

@@ -24,6 +24,7 @@ import { illustrationById } from "@/lib/news/illustrations";
 import { storyColumnSpan } from "@/lib/news/layout";
 import type {
   IllustrationAlignment,
+  IllustrationFlow,
   NewsStory,
   StoryCategory,
   StoryKind,
@@ -195,8 +196,14 @@ export function StoryEditorDialog({
                     onChange={(event) => change("illustrationCaption", event.target.value)}
                   />
                 </Field>
-                <div className="two-fields">
-                  <Field id="story-image-flow" label="Text flow">
+                <div className="three-fields">
+                  <Field id="story-image-layout" label="Image layout" hint="Centered images always use a separate block">
+                    <NativeSelect id="story-image-layout" value={draft.illustrationFlow ?? "wrap"} onChange={(event) => change("illustrationFlow", event.target.value as IllustrationFlow)}>
+                      <NativeSelectOption value="wrap">Newspaper wrap</NativeSelectOption>
+                      <NativeSelectOption value="block">Reserved image block</NativeSelectOption>
+                    </NativeSelect>
+                  </Field>
+                  <Field id="story-image-flow" label="Position">
                     <NativeSelect id="story-image-flow" value={draft.illustrationAlign} onChange={(event) => change("illustrationAlign", event.target.value as IllustrationAlignment)}>
                       <NativeSelectOption value="left">Image left</NativeSelectOption>
                       <NativeSelectOption value="right">Image right</NativeSelectOption>

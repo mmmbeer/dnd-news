@@ -9,6 +9,7 @@ export type StoryKind =
 
 export type StoryWidth = "full" | "wide" | "standard";
 export type IllustrationAlignment = "left" | "right" | "center";
+export type IllustrationFlow = "wrap" | "block";
 
 export type StoryCategory =
   | "any"
@@ -68,6 +69,8 @@ export interface NewsStory {
   locked: boolean;
   illustrationId: string | null;
   illustrationAlign: IllustrationAlignment;
+  /** Wrap article copy around the image or reserve a separate rectangular block. */
+  illustrationFlow?: IllustrationFlow;
   illustrationCaption?: string;
   textStyles?: TextRegionStyles;
   /** Explicit layout overrides set by the handles in the page editor. */

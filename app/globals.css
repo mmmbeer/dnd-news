@@ -684,6 +684,29 @@ button:disabled {
   hyphens: auto;
 }
 
+.newspaper-copy-flow {
+  column-gap: 18px;
+  column-rule: 1px solid rgba(30, 30, 27, 0.38);
+}
+
+.newspaper-copy-flow::after {
+  display: block;
+  clear: both;
+  content: "";
+}
+
+.newspaper-copy-flow > .newspaper-copy {
+  column-count: initial !important;
+  column-gap: normal;
+  column-rule: 0;
+}
+
+.story-art.is-copy-wrapped {
+  break-inside: avoid;
+  shape-outside: margin-box;
+  shape-margin: 2px;
+}
+
 .is-justified .newspaper-copy {
   text-align: justify;
 }

@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type ElementType,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 import Image from "next/image";
 import { Edit3, Grip, ImageIcon, RefreshCw, Trash2 } from "lucide-react";
@@ -17,7 +18,7 @@ import { editableTextHtml, storyBodyHtml } from "@/lib/news/editable-html";
 import { fittedLoremBody } from "@/lib/news/fitted-lorem";
 import { fontFamilyFor } from "@/lib/news/fonts";
 import type { NewsStory, NewspaperIssue, IssueSettings, TextRegionStyle } from "@/lib/news/types";
-import { illustrationById } from "@/lib/news/illustrations";
+import { illustrationById, type StoryIllustration } from "@/lib/news/illustrations";
 import { storyBodyColumns, storyColumnSpan } from "@/lib/news/layout";
 import { masonryRowSpan } from "@/lib/news/masonry";
 
@@ -205,7 +206,19 @@ function EditableText({
   );
 }
 
-function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; columns: number; finalized: boolean; onChange: (value: string) => void }) {
+function StoryBody({
+  story,
+  columns,
+  finalized,
+  leadingContent,
+  onChange,
+}: {
+  story: NewsStory;
+  columns: number;
+  finalized: boolean;
+  leadingContent?: ReactNode;
+  onChange: (value: string) => void;
+}) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const targetHeightRef = useRef<number | null>(null);
   const [fittedBody, setFittedBody] = useState(story.body);
@@ -229,7 +242,7 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
     const measurement = article.cloneNode(true) as HTMLElement;
     measurement.classList.remove("is-selected");
     measurement.setAttribute("aria-hidden", "true");
-    measurement.querySelectorAll(".story-drag-handle, .story-preview-tools, .story-resize-handle, .image-resize-handle").forEach((element) => element.remove());
+    measurement.querySelectorAll(".story-drag-handle, .story-preview-tools, .story-resize-handle, .image-selection-tools, .image-resize-handle").forEach((element) => element.remove());
     Object.assign(measurement.style, {
       position: "absolute",
       inset: "0 auto auto 0",
@@ -301,20 +314,21 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
     isFitted,
     story.columnSpan,
     story.illustrationAlign,
+    story.illustrationFlow,
     story.illustrationId,
     story.illustrationScale,
     story.textStyles,
     story.width,
   ]);
 
-  return (
+  const body = (
     <div
       ref={(element) => {
         bodyRef.current = element;
         setElement(isBrowserEditable ? element : null);
       }}
       className={`newspaper-copy ${isEmpty ? "is-empty" : ""} ${isFitted ? "is-auto-fit" : finalized ? "" : "preview-editable"}`.trim()}
-      style={{ columnCount: bodyColumns, ...story.textStyles?.body }}
+      style={{ columnCount: leadingContent ? undefined : bodyColumns, ...story.textStyles?.body }}
       data-placeholder={!finalized && isEmpty ? "Click to add story copy" : undefined}
       data-text-scope="story"
       data-text-key="body"
@@ -335,6 +349,108 @@ function StoryBody({ story, columns, finalized, onChange }: { story: NewsStory; 
       }}
       dangerouslySetInnerHTML={isBrowserEditable ? undefined : { __html: bodyHtml }}
     />
+  );
+
+  if (!leadingContent) return body;
+
+  return (
+    <div className="newspaper-copy-flow" style={{ columnCount: bodyColumns }}>
+      {leadingContent}
+      {body}
+    </div>
+  );
+}
+
+function StoryArtwork({
+  story,
+  illustration,
+  alignment,
+  finalized,
+  selected,
+  wrapped,
+  style,
+  onSelect,
+  onReplace,
+  onRemove,
+  onResize,
+}: {
+  story: NewsStory;
+  illustration: StoryIllustration;
+  alignment: "left" | "right" | "center";
+  finalized: boolean;
+  selected: boolean;
+  wrapped: boolean;
+  style?: CSSProperties;
+  onSelect: () => void;
+  onReplace: () => void;
+  onRemove: () => void;
+  onResize: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <figure
+      className={`story-art story-art-${illustration.kind} art-align-${alignment} ${wrapped ? "is-copy-wrapped" : ""} ${selected ? "is-selected" : ""}`.trim()}
+      style={style}
+      title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
+      tabIndex={finalized ? undefined : 0}
+      aria-label={finalized ? undefined : `Select image for ${story.title}`}
+      onFocus={() => {
+        if (!finalized) onSelect();
+      }}
+      onClick={(event) => {
+        if (!finalized) {
+          event.stopPropagation();
+          onSelect();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (!finalized && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          event.stopPropagation();
+          onSelect();
+        }
+      }}
+    >
+      <Image src={illustration.src} alt={illustration.alt} width={512} height={512} unoptimized />
+      <figcaption>{story.illustrationCaption || (story.kind === "comic" ? "Editorial cartoon" : illustration.alt)}</figcaption>
+      {selected && (
+        <span className="image-selection-tools">
+          <button
+            type="button"
+            className="image-replace-button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onReplace();
+            }}
+            aria-label={`Replace image for ${story.title}`}
+            title="Replace image"
+          >
+            <RefreshCw aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="image-delete-button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove();
+            }}
+            aria-label={`Remove image from ${story.title}`}
+            title="Remove image"
+          >
+            <Trash2 aria-hidden="true" />
+          </button>
+        </span>
+      )}
+      {!finalized && (
+        <button
+          type="button"
+          className="image-resize-handle"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={onResize}
+          aria-label="Resize image"
+          title="Drag to resize image"
+        />
+      )}
+    </figure>
   );
 }
 
@@ -616,7 +732,39 @@ export function NewspaperPage({
               background: validDropTarget ? "rgba(47, 152, 89, 0.085)" : "rgba(180, 107, 44, 0.07)",
             } : {}),
           } as CSSProperties;
-          const artStyle = story.illustrationScale ? { "--art-width": `${story.illustrationScale}%` } as CSSProperties : undefined;
+          const wrapsWithCopy = Boolean(
+            illustration
+            && story.kind !== "comic"
+            && illustrationAlign !== "center"
+            && (story.illustrationFlow ?? "wrap") === "wrap",
+          );
+          const configuredArtScale = story.illustrationScale
+            ?? (story.kind === "comic" ? 100 : story.kind === "lead" ? 28 : story.width === "wide" ? 32 : 44);
+          const renderedArtScale = wrapsWithCopy
+            ? Math.min(100, configuredArtScale * storyBodyColumns(story, settings.columns))
+            : configuredArtScale;
+          const artStyle = { "--art-width": `${renderedArtScale}%` } as CSSProperties;
+          const artwork = illustration ? (
+            <StoryArtwork
+              story={story}
+              illustration={illustration}
+              alignment={illustrationAlign}
+              finalized={finalized}
+              selected={isImageSelected}
+              wrapped={wrapsWithCopy}
+              style={artStyle}
+              onSelect={() => {
+                setSelectedImageId(story.id);
+                onSelect(story.id);
+              }}
+              onReplace={() => onChooseImage(story.id)}
+              onRemove={() => {
+                setSelectedImageId(null);
+                onRemoveImage(story.id);
+              }}
+              onResize={(event) => startImageResize(event, story)}
+            />
+          ) : null;
 
           return (
             <article
@@ -710,74 +858,18 @@ export function NewspaperPage({
               {story.kind !== "comic" && (
                 <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} textStyle={story.textStyles?.byline} region={{ scope: "story", key: "byline", role: "body", storyId: story.id }} /></div>
               )}
-              {illustration && (
-                <figure
-                  className={`story-art story-art-${illustration.kind} art-align-${illustrationAlign} ${isImageSelected ? "is-selected" : ""}`.trim()}
-                  style={artStyle}
-                  title={illustration.sourceTitle ? `${illustration.sourceTitle} — ${illustration.creator} — ${illustration.license}` : illustration.label}
-                  tabIndex={finalized ? undefined : 0}
-                  aria-label={finalized ? undefined : `Select image for ${story.title}`}
-                  onFocus={() => {
-                    if (!finalized) {
-                      setSelectedImageId(story.id);
-                      onSelect(story.id);
-                    }
-                  }}
-                  onClick={(event) => {
-                    if (!finalized) {
-                      event.stopPropagation();
-                      setSelectedImageId(story.id);
-                      onSelect(story.id);
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    if (!finalized && (event.key === "Enter" || event.key === " ")) {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setSelectedImageId(story.id);
-                      onSelect(story.id);
-                    }
-                  }}
-                >
-                  <Image src={illustration.src} alt={illustration.alt} width={512} height={512} unoptimized />
-                  <figcaption>{story.illustrationCaption || (story.kind === "comic" ? "Editorial cartoon" : illustration.alt)}</figcaption>
-                  {isImageSelected && (
-                    <span className="image-selection-tools">
-                      <button
-                        type="button"
-                        className="image-replace-button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onChooseImage(story.id);
-                        }}
-                        aria-label={`Replace image for ${story.title}`}
-                        title="Replace image"
-                      >
-                        <RefreshCw aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="image-delete-button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setSelectedImageId(null);
-                          onRemoveImage(story.id);
-                        }}
-                        aria-label={`Remove image from ${story.title}`}
-                        title="Remove image"
-                      >
-                        <Trash2 aria-hidden="true" />
-                      </button>
-                    </span>
-                  )}
-                  {!finalized && <button type="button" className="image-resize-handle" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => startImageResize(event, story)} aria-label="Resize image" title="Drag to resize image" />}
-                </figure>
-              )}
+              {artwork && !wrapsWithCopy && artwork}
               {story.kind === "comic" && story.byline && (
                 <div className="story-byline">By <EditableText value={story.byline} finalized={finalized} onChange={(value) => onStoryChange(story.id, "byline", value)} textStyle={story.textStyles?.byline} region={{ scope: "story", key: "byline", role: "body", storyId: story.id }} /></div>
               )}
               {story.location && story.kind !== "comic" && <EditableText as="span" value={story.location} finalized={finalized} onChange={(value) => onStoryChange(story.id, "location", value.toUpperCase())} className="story-location" textStyle={story.textStyles?.location} region={{ scope: "story", key: "location", role: "body", storyId: story.id }} />}
-              <StoryBody story={story} columns={settings.columns} finalized={finalized} onChange={(value) => onStoryChange(story.id, "body", value)} />
+              <StoryBody
+                story={story}
+                columns={settings.columns}
+                finalized={finalized}
+                leadingContent={wrapsWithCopy ? artwork : undefined}
+                onChange={(value) => onStoryChange(story.id, "body", value)}
+              />
               {story.kind === "lead" && <div className="continued-mark">Continued inside</div>}
             </article>
           );

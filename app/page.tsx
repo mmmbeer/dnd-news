@@ -64,6 +64,7 @@ function normalizeIssue(issue: NewspaperIssue): NewspaperIssue {
       bodyMode: story.bodyMode === "fit-lorem" ? "fit-lorem" : "story",
       illustrationId: story.illustrationId ?? null,
       illustrationAlign: story.illustrationAlign ?? (story.kind === "comic" ? "center" : story.kind === "lead" ? "left" : "right"),
+      illustrationFlow: story.illustrationFlow ?? (story.kind === "comic" || story.illustrationAlign === "center" ? "block" : "wrap"),
       illustrationCaption: story.illustrationCaption ?? "",
       illustrationScale: story.illustrationScale ?? (story.kind === "comic" ? 100 : story.kind === "lead" ? 28 : story.width === "wide" ? 32 : 44),
     })),
